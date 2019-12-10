@@ -13,9 +13,9 @@ def f():
     
     cache = {} #Use to keep track of derivatives.
 
-    #--------------------
-    #FORWARD PROPAGATION.
-    #--------------------
+    #-------------------
+    #FORWARD PROPAGATION
+    #-------------------
 
     #1st layer Convolution.
     conv1 = convFwd(X, F1, b1, p = 0, s = 1) #(28 x 28 x 6).
@@ -45,21 +45,25 @@ def f():
     cost = costFunction(yHat, y)
 
     #--------------------
-    #BACKWARD PROPAGATION.
+    #BACKWARD PROPAGATION
     #--------------------
 
     #Error at yHat.
     deltaL = yHat - y #(10, 1).
     #Backpropagate error in weight/bias between yHat and fc2.
     dW5, db5 = fcBack(deltaL, fc2_act, W5, b5) #(10, 84).
-    
+    #Backpropagate through derivative of tanH.
+    fc2 = actTanhBack(fc2_act)
+
     #Error at fc2.
-    deltaL = np.dot(W5.T, deltaL) * actTanhBack(fc2) #(84, 1).
+    deltaL = np.dot(W5.T, deltaL) * fc2 #(84, 1).
     #Backpropagate error in weight/bias between fc2 and fc1.
     dW4, db4 = fcBack(deltaL, fc1_act), W4, b4) #(84, 120).
-    
+    #Backpropagate through derivative of tanH.
+    fc1 = actTanhBack(fc1_act)
+
     #Error at fc1.
-    deltaL = np.dot(W4.T, deltaL) * actTanhBack(fc1) #(120, 1).
+    deltaL = np.dot(W4.T, deltaL) * fc1 #(120, 1).
     #Backpropagate error in weight/bias between fc1 and pool2.
     dW3, db3 = fcBack(deltaL, pool2_flat, W3, b3) #(120, 400).
 
@@ -73,7 +77,7 @@ def f():
     #Backpropagate through derivative of tanH.
     conv2 = actTanhBack(conv2_act)
     #Backpropagate error in filter/bias between conv2 and pool1.
-    dF2, db2 = convBack(conv2, F2, b2) #(5 x 5 x 6) and (1 x 1 x 6)
+    dF2, db2 = convBack(conv2, pool1, F2, b2) #(5 x 5 x 6) and (1 x 1 x 6)
         
     #Error at pool1.
 

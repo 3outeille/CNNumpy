@@ -1,6 +1,21 @@
 import numpy as np
 from utils import *
 
+def fcFwd(fc, W, b):
+    """
+        Perfoms a forward propagation between 2 fully connected layers. 
+
+        Parameters:
+        -'fc': last convolved layer flatten in size.
+        -'W': weight.
+        -'b': bias.
+        Returns:
+        -'A_fc': fully connected layer.
+    """
+    A_fc = np.dot(W, fc) + b
+
+    return A_fc
+
 def convFwd(A_prev, W, b, p, s):
     """
         Perfoms a forward convolution.         
@@ -90,19 +105,4 @@ def avgpoolFwd(A_conv_act, f, p, s):
                 A_pool[i] = np.mean(A_conv_act[i, h_start:h_end, w_start:w_end])
 
     return A_pool
-
-def fcFwd(fc, W, b):
-    """
-        Perfoms a forward propagation between 2 fully connected layers. 
-
-        Parameters:
-        -'fc': last convolved layer flatten in size.
-        -'W': weight.
-        -'b': bias.
-        Returns:
-        -'A_fc': fully connected layer.
-    """
-    A_fc = np.dot(W, fc) + b
-
-    return A_fc
 

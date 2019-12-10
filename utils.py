@@ -1,4 +1,4 @@
-import numpy as np
+mport numpy as np
 
 def tanh(x, constA = 1.7159):
     """
@@ -40,7 +40,7 @@ def initializeFilter(n_f, f, n_C):
         Returns:
         -'F': returns n_f weight of shape (f, f, n_C) 
         -'b': returns n_f bias of shape (1, 1, n_C)
-    """
+   """
     
     F = np.random.randn(n_f, f, f, n_C)
     b = np.random.randn(n_f, 1, 1, n_C)    

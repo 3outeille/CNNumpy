@@ -1,6 +1,3 @@
-def convBack():
-    
-
 def fcBack(deltaL, A_prev, W, b):
     """
         Returns gradients computation of W and b.
@@ -73,3 +70,23 @@ def actTanhBack(A_conv_act):
     A_conv = dTanh(A_conv)
 
     return A_conv
+
+def convBack(A_conv, A_pool, F, b, p, s):
+    """
+
+
+    """
+    m, n_H, n_W, n_C = A_conv.shape  
+    n_f, f, f, _ = F.shape
+    
+    for i in range(m):
+
+        for h in range(n_H): 
+            h_start = h * s
+            h_end = h_start + f
+
+            for w in range(n_W):
+                w_start = w * s
+                w_end = w_start + f
+                
+                    F[] += A_conv[i, h_start:h_end, w_start:w_end] * A_pool[]
