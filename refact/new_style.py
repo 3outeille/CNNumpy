@@ -1,4 +1,7 @@
 import numpy as np
+import urllib.request
+import gzip
+import os
 
 class Conv():
     """
@@ -16,6 +19,8 @@ class Conv():
         self.W = {'val': np.random.randn(self.n_F, self.f, self.f, self.n_C), 'grad': 0}
         self.b = {'val': np.random.randn(self.n_F, 1, 1, self.n_C), 'grad': 0}
         
+        self.cache = None
+
     def forward(self, A_prev):
         """
             Performs a forward convolution.
@@ -47,6 +52,7 @@ class Conv():
                     
                     A_conv[i, h, w] = np.sum(A_prev[i, h_start:h_end, w_start:w_end, c] 
                                     * self.W['val']) + self.b['val']
+        self.cache = A_conv
 
         return A_conv 
 
@@ -64,25 +70,30 @@ class Conv():
         
         W_rot = np.rot90(np.rot90(self.W['val']))
         
-        deltaL = 
-        
+        X = self.cache
+        m, n_H, n_W, n_C = X.shape
+        deltaL = np.zeros(X.shape)
     
         #Distribute error in weight (compute gradient of weight).
-        for i in range(self.W['val'].shape(0)):
-            for h in range(self.W['val'].shape(1)):
+        for i in range(self.n_F):
+            for h in range(self.f):
                 h_start = h * self.s
                 h_end = h_start + self.f
                 
-                for w in range(self.W['val'].shape(2)):
+                for w in range(self.f):
                     w_start = w * self.s
                     w_end = w_start + self.f
 
-                    self.W['grad']
+                    self.W['grad'][i, h, w] = np.sum(X[i, h_start:h_end, w_start:w_end] 
+                                            * A_prev_error[i, h, w])
 
         #Distribute error in bias (compute gradient of bias).
-    
+        for i in range(self.n_F):
+            self.b['grad'][i] = np.sum(A_prev_error[i])
 
-        #Compute error.
+        A_prev_error_pad = np.pad(A_prev_error, (self.f, self.f), 'constant')
+
+        #Compute error of current layer.
         for i in range(m):
             for h in range(n_H):
                 h_start = h * self.s
@@ -92,7 +103,7 @@ class Conv():
                     w_start = w * self.s
                     w_end = w_start + self.f
                     
-                    deltaL[i, h, w] = np.sum(W_rot * A_prev_error[i, h_start:h_end, w_start:w_end]) 
+                    deltaL[i, h, w] = np.sum(W_rot * A_prev_error_pad[i, h_start:h_end, w_start:w_end]) 
 
         return deltaL 
 
@@ -223,10 +234,6 @@ class Fc():
 
         return new_deltaL
     
-#------------------
-#Utilities function
-#------------------
-
 class TanH():
     def __init__(self, alpha = 1.7159):
         self.alpha = alpha
@@ -268,11 +275,11 @@ class LeNet5():
     def __init__(self):
         self.conv1 = Conv(nb_filters = 6, filter_size = 5, nb_channels = 1)
         self.tanH1 = TanH()
-        self.pool1 = AvgPool(2,2)
+        self.pool1 = AvgPool(filter_size = 2, stride = 2)
 
-        self.conv2 = Conv(nb_filters = 16, filter_size = 5, nb_chall 6)
+        self.conv2 = Conv(nb_filters = 16, filter_size = 5, nb_channels = 6)
         self.tanH2 = TanH()
-        self.pool2 = AvgPool(2,2)
+        self.pool2 = AvgPool(filter_size = 2, stride = 2)
         self.pool2_shape = None
 
         self.fc1 = Fc(row = 120, column = 5*5*16)
@@ -290,7 +297,7 @@ class LeNet5():
         act1 = self.tanH1.forward(conv1)
         pool1 = self.pool1.forward(act1) #(14 x 14 x 6)
 
-        conv2 = self.conv2.forward(pool1) #(10 x 10 x 6)
+        conv2 = self.conv2.forward(pool1) #(10 x 10 x 16)
         act2 = self.tanH2.forward(conv2)
         pool2 = self.pool2.forward(act2) #(5 x 5 x 16)
 
@@ -332,7 +339,7 @@ class LeNet5():
         #Distribute error through tanH.
         deltaL_4 = self.tanH2.backward(deltaL_4)
         #Distribute error from pool2 to conv2.
-        deltaL_4 = self.conv2.backward(deltaL_4) #(10 x 10 x 6)
+        deltaL_4 = self.conv2.backward(deltaL_4) #(10 x 10 x 16)
         
         #Distribute error to pool1.
         deltaL_5 = self.pool1.backward(deltaL_4) #(14 x 14 x 6)
@@ -347,3 +354,69 @@ class LeNet5():
     def set_params(self):
         pass
 
+
+#------------------
+#Utilities function
+#------------------
+
+
+filename = [
+        ["training_images","train-images-idx3-ubyte.gz"],
+        ["test_images","t10k-images-idx3-ubyte.gz"],
+        ["training_labels","train-labels-idx1-ubyte.gz"],
+        ["test_labels","t10k-labels-idx1-ubyte.gz"]
+]
+
+def download_mnist(filename):
+    base_url = "http://yann.lecun.com/exdb/mnist/"
+    for elt in filename:
+        print("Downloading " + elt[1] + " in data/ ...")
+        urllib.request.urlretrieve(base_url+elt[1], 'data/' + elt[1])
+    print("Download complete.")
+
+
+def extract_mnist(filename):
+    mnist = {}
+    for elt in filename[:2]:
+        print('Extracting data/' + elt[0] + '...')
+        with gzip.open('data/' + elt[1]) as f:
+            #According to the doc on MNIST website, offset for image starts at 16.
+            mnist[elt[0]] = np.frombuffer(f.read(), dtype=np.uint8, offset=16).reshape(-1, 28*28)
+    
+    for elt in filename[2:]:
+        print('Extracting data/' + elt[0] + '...')
+        with gzip.open('data/' + elt[1]) as f:
+            #According to the doc on MNIST website, offset for label starts at 8.
+            mnist[elt[0]] = np.frombuffer(f.read(), dtype=np.uint8, offset=8)
+
+    print('Extraction complete') 
+
+    return mnist
+
+def load(filename):
+    L = [elt[1] for elt in filename]   
+    count = 0 
+    #Check if the 4 .gz files exist.
+    for elt in L:
+        if os.path.isfile('data/' + elt):
+            count += 1
+    #If the 4 .gz are not in data/, we download and extract them.
+    if count != 4:
+        download_mnist(filename)
+        mnist = extract_mnist(filename)
+    else: #We just extract them.
+        mnist = extract_mnist(filename)
+
+    print('Loading complete')
+    return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
+        
+
+def train(filename):
+    X_train, Y_train, X_test, Y_test = load(filename)
+
+    model = LeNet5()
+    Y_pred = model.forward(X)
+    deltaL = Y_pred - Y
+    model.backward(deltaL)
+
+train()
