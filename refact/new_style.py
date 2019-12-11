@@ -2,6 +2,8 @@ import numpy as np
 import urllib.request
 import gzip
 import os
+from skimage import transform
+
 
 class Conv():
     """
@@ -31,9 +33,8 @@ class Conv():
             Returns:
             -A_conv: previous layer convolved.
         """
-
         m, n_H_prev, n_W_prev, n_C_prev = A_prev.shape
-        
+
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
         n_C = self.n_F
@@ -50,7 +51,7 @@ class Conv():
                     w_start = w * self.s
                     w_end = w_start + self.f
                     
-                    A_conv[i, h, w] = np.sum(A_prev[i, h_start:h_end, w_start:w_end, c] 
+                    A_conv[i, h, w] = np.sum(A_prev[i, h_start:h_end, w_start:w_end] 
                                     * self.W['val']) + self.b['val']
         self.cache = A_conv
 
@@ -91,7 +92,8 @@ class Conv():
         for i in range(self.n_F):
             self.b['grad'][i] = np.sum(A_prev_error[i])
 
-        A_prev_error_pad = np.pad(A_prev_error, (self.f, self.f), 'constant')
+        A_prev_error_pad = np.pad(A_prev_error, ((0, 0), (self.pad, self.pad), 
+                        (self.pad, self.pad), (0, 0)), 'constant')
 
         #Compute error of current layer.
         for i in range(m):
@@ -411,12 +413,30 @@ def load(filename):
     return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
         
 
+def resize_batch(imgs):
+    # A function to resize a batch of MNIST images to (32, 32)
+    # Args:
+    #   imgs: a numpy array of size [batch_size, 28 X 28].
+    # Returns:
+    #   a numpy array of size [batch_size, 32, 32].
+    imgs = imgs.reshape((-1, 28, 28, 1))
+    resized_imgs = np.zeros((imgs.shape[0], 32, 32, 1))
+    for i in range(imgs.shape[0]):
+        resized_imgs[i, ..., 0] = transform.resize(imgs[i, ..., 0], (32, 32))
+    return resized_imgs
+
 def train(filename):
     X_train, Y_train, X_test, Y_test = load(filename)
+    X_train, X_test = X_train/float(255), X_test/float(255)
+    X_train -= np.mean(X_train)
+    X_test -= np.mean(X_test)
+    
+    a = resize_batch(X_train[0])
+    print(a.shape)
 
     model = LeNet5()
-    Y_pred = model.forward(X)
+    Y_pred = model.forward(a)
     deltaL = Y_pred - Y
     model.backward(deltaL)
 
-train()
+train(filename)
