@@ -12,7 +12,7 @@ def download_mnist(filename):
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for elt in filename:
         print("Downloading " + elt[1] + " in data/ ...")
-        urllib.request.urlretrieve(base_url+elt[1], 'data/' + elt[1])
+        urllib.request.urlretrieve(base_url + elt[1], 'data/' + elt[1])
     print("Download complete.")
 
 
