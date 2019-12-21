@@ -130,7 +130,7 @@ class Conv():
 
                         dX[i, h, w, c] = np.sum(dout_pad[i, h_start:h_end, w_start:w_end, :] * W_rot_tile)
 
-        return dX
+        return dX, self.W['grad'], self.b['grad']
         
         
 class AvgPool():
@@ -173,42 +173,6 @@ class AvgPool():
         return A_pool
 
     def backward(self, dout):
-        """
-            Distributes the error back from previous layer to pooling layer.
-            Parameters:
-            - A_prev_error: Previous layer with the error.
-            Returns:
-            - A_pool_new: New pooling layer updated with error.
-
-        """
-        """
-        A_pool = self.cache
-        m, n_H, n_W, n_C = A_pool.shape
-        A_pool_new = np.copy(A_prev_error)
-        
-        for i in range(m):
-
-            for h in range(n_H):
-                h_start = h * self.s
-                h_end = h_start + self.f
-
-                for w in range(n_W):
-                    w_start = w * self.s
-                    w_end = w_start + self.f
-
-                    for c in range(n_C):
-                        #Compute average for a given value.
-                        average = A_pool[i, h, w, c] / (n_H * n_W)
-                        #Create a filter of size (f, f) filled with average.
-                        filter_average = np.full((self.f, self.f) , average)
-                        
-                        print('filter_average:' + str(filter_average.shape))
-                        print('A_pool_new:' + str(A_pool_new[i, h_start:h_end, w_start:w_end, c].shape)) 
-
-                        A_pool_new[i, h_start:h_end, w_start:w_end, c] +=  filter_average
-
-        return A_pool_new
-        """
         """
             Distributes error through pooling layer.
             Parameters:
@@ -283,8 +247,26 @@ class Fc():
         #function which is done in TanH.backward() only when we have to backpropagate
         #error through tanH.
 
-        return new_deltaL
+        return new_deltaL, self.W['grad'], self.b['grad']
     
+
+class AdamGD():
+
+    def __init__(self):
+        pass
+
+    def update_params(self, params, grads):
+        
+        #Momentum parameters.
+        vdW1, vdb1 = 
+        vdW2, vdb2 = 
+        vdW3, vdb3 = 
+        vdW4, vdb4 = 
+        vdW5, vdb5 = 
+
+        #RMSpop parameters.
+
+
 class TanH():
     def __init__(self, alpha = 1.7159):
         self.alpha = alpha
@@ -321,3 +303,20 @@ class Softmax():
             - X: input vector.
         """
         return np.exp(X) / np.sum(np.exp(X), axis=0)
+
+class CrossEntropyLoss():
+
+    def __init__(self):
+        pass
+    
+    def get(self, y_pred, y):
+        """
+            Negative log likelihood.
+            Parameters:
+            -
+            -
+        """
+        loss = -np.sum(y * np.log(y_pred))
+        return loss
+
+
