@@ -39,9 +39,9 @@ class LeNet5():
         #print(pool2.shape)
         
         self.pool2_shape = pool2.shape #Need it in backpropagation.
-        pool2_flatten = pool2.reshape(np.prod(pool2.shape), 1) #(400x1)
+        pool2_flatten = pool2.reshape(np.prod(pool2.shape[1:]), pool2.shape[0]) #(400x1)
         #print(pool2_flatten.shape)
-
+        
         fc1 = self.fc1.forward(pool2_flatten) #(120x1)
         #print(fc1.shape)
         act3 = self.tanH3.forward(fc1)
@@ -100,21 +100,27 @@ class LeNet5():
         deltaL_5, dW1, db1 = self.conv1.backward(deltaL_5)
         #print(deltaL_5.shape)
         
-        params = {      
-                'W1': self.conv1.W['val'], 'b1': self.conv1.b['val'],
-                'W2': self.conv2.W['val'], 'b2': self.conv2.b['val'],
-                'W3': self.fc1.W['val'], 'b3': self.fc1.b['val'], 
-                'W4': self.fc2.W['val'], 'b4': self.fc2.b['val'], 
-                'W5': self.fc3.W['val'], 'b5': self.fc3.b['val']
-            }
-
         grads = {
                 'dW1': dW1, 'db1': db1, 'dW2': dW2, 'db2': db2, 
                 'dW3': dW3, 'db3': db3, 'dW4': dW4, 'db4': db4,
                 'dW5': dW5, 'db5': db5
             }
 
-        return params, grads
+        return grads
+
+
+    def get_params(self):
+        """
+
+        """
+        params = {      
+            'W1': self.conv1.W['val'], 'b1': self.conv1.b['val'],
+            'W2': self.conv2.W['val'], 'b2': self.conv2.b['val'],
+            'W3': self.fc1.W['val'], 'b3': self.fc1.b['val'], 
+            'W4': self.fc2.W['val'], 'b4': self.fc2.b['val'], 
+            'W5': self.fc3.W['val'], 'b5': self.fc3.b['val']
+        }  
+        return params
 
 
 filename = [
@@ -124,6 +130,12 @@ filename = [
         ["test_labels","t10k-labels-idx1-ubyte.gz"]
 ]
 
+def get_batch(X, batch_size):
+    N = len(X)
+    i = np.random.randint(1, N-batch_size)
+    return X[i:i+batch_size]
+
+
 def train(filename):
     X_train, y_train, X_test, y_test = load(filename)
     X_train, X_test = X_train/float(255), X_test/float(255)
@@ -131,23 +143,29 @@ def train(filename):
     X_test -= np.mean(X_test)
 
     model = LeNet5()
-    loss = CrossEntropyLoss()
-
+    cost = CrossEntropyLoss()
+    optimizer = AdamGD(lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
+    
+    costs = []
     NB_EPOCH = 10
     BATCH_SIZE = 32
     
     for epoch in range(NB_EPOCH):
 
-        for batch in range(BATCH_SIZE):
-            
-        X_resize = resize_batch(X_train)
-        y_resize = resize_batch(y_train)    
+        X_batch = resize_batch(get_batch(X_train, BATCH_SIZE))
+        y_batch = get_batch(y_train, BATCH_SIZE)
 
-        y_pred, deltaL = model.forward(X_resize, y_resize)
-        params, grads = model.backward(deltaL)
-
-
-
+        y_pred, deltaL = model.forward(X_batch, y_batch)
+        grads = model.backward(deltaL)
+        optimizer.update_params(grads)
+        #costs.append(cost.get(y_pred, y_resize))
+        print(cost.get(y_pred, y_batch))
+    
+    """
+    y_pred, deltaL = model.forward(resize_batch(X_train[0]), y_train[0])
+    grads = model.backward(deltaL)
+    print('Done')
+    """
 
 
 train(filename)

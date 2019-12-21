@@ -112,9 +112,10 @@ class Conv():
             
             for c in range(self.n_C): #Take one weight channel and duplicate it n_C_dout time along depth axis.
                 
-                W_rot_tile = np.repeat(W_rot[i, :, :, c][..., np.newaxis], repeats = n_C_dout , axis = 2)
+                W_rot_tile = W_rot[:, :, :, c].reshape((W_rot.shape[1], W_rot.shape[2], W_rot.shape[0]))
+                #W_rot_tile = np.repeat(W_rot[i, :, :, c][..., np.newaxis], repeats = n_C_dout , axis = 2)
                 #print('W_rot_tile: ' + str(W_rot_tile.shape))
-
+       
                 for h in range(n_H):
                     h_start = h * self.s
                     h_end = h_start + self.f
@@ -222,6 +223,7 @@ class Fc():
             Returns:
             - A_fc: new fully connected layer.
         """
+
         self.cache = fc
         A_fc = np.dot(self.W['val'], fc) + self.b['val']
         return A_fc
@@ -252,22 +254,73 @@ class Fc():
 
 class AdamGD():
 
-    def __init__(self):
-        pass
+    def __init__(self, lr, beta1, beta2, epsilon, params):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.params = params
 
-    def update_params(self, params, grads):
+        #Initialize Momentum parameters.
+        self.vdW1, self.vdb1 = np.zeros(self.params['W1'].shape), np.zeros(self.params['b1'].shape)
+        self.vdW2, self.vdb2 = np.zeros(self.params['W2'].shape), np.zeros(self.params['b2'].shape)
+        self.vdW3, self.vdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape)
+        self.vdW4, self.vdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape)
+        self.vdW5, self.vdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape)
+
+        #Initialize RMSpop parameters.
+        self.sdW1, self.sdb1 = np.zeros(self.params['W1'].shape), np.zeros(self.params['b1'].shape) 
+        self.sdW2, self.sdb2 = np.zeros(self.params['W2'].shape), np.zeros(self.params['b2'].shape) 
+        self.sdW3, self.sdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape) 
+        self.sdW4, self.sdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape) 
+        self.sdW5, self.sdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape) 
+
+    def update_params(self, grads):
+        """
+
+        """
+        #Momentum update.
+        self.vdW1 = (self.beta1 * self.vdW1) + (1 - self.beta1) * grads['dW1'] 
+        self.vdW2 = (self.beta1 * self.vdW2) + (1 - self.beta1) * grads['dW2']
+        self.vdW3 = (self.beta1 * self.vdW3) + (1 - self.beta1) * grads['dW3']
+        self.vdW4 = (self.beta1 * self.vdW4) + (1 - self.beta1) * grads['dW4']
+        self.vdW5 = (self.beta1 * self.vdW5) + (1 - self.beta1) * grads['dW5']
+                
+        self.vdb1 = (self.beta1 * self.vdb1) + (1 - self.beta1) * grads['db1']  
+        self.vdb2 = (self.beta1 * self.vdb2) + (1 - self.beta1) * grads['db2'] 
+        self.vdb3 = (self.beta1 * self.vdb3) + (1 - self.beta1) * grads['db3'] 
+        self.vdb4 = (self.beta1 * self.vdb4) + (1 - self.beta1) * grads['db4'] 
+        self.vdb5 = (self.beta1 * self.vdb5) + (1 - self.beta1) * grads['db5'] 
+
+        #RMSpop update.
+        self.sdW1 = (self.beta2 * self.sdW1) + (1 - self.beta2) * grads['dW1']**2 
+        self.sdW2 = (self.beta2 * self.sdW2) + (1 - self.beta2) * grads['dW2']**2
+        self.sdW3 = (self.beta2 * self.sdW3) + (1 - self.beta2) * grads['dW3']**2
+        self.sdW4 = (self.beta2 * self.sdW4) + (1 - self.beta2) * grads['dW4']**2
+        self.sdW5 = (self.beta2 * self.sdW5) + (1 - self.beta2) * grads['dW5']**2
+                
+        self.sdb1 = (self.beta2 * self.sdb1) + (1 - self.beta2) * grads['db1']**2  
+        self.sdb2 = (self.beta2 * self.sdb2) + (1 - self.beta2) * grads['db2']**2 
+        self.sdb3 = (self.beta2 * self.sdb3) + (1 - self.beta2) * grads['db3']**2 
+        self.sdb4 = (self.beta2 * self.sdb4) + (1 - self.beta2) * grads['db4']**2 
+        self.sdb5 = (self.beta2 * self.sdb5) + (1 - self.beta2) * grads['db5']**2 
         
-        #Momentum parameters.
-        vdW1, vdb1 = 
-        vdW2, vdb2 = 
-        vdW3, vdb3 = 
-        vdW4, vdb4 = 
-        vdW5, vdb5 = 
+        #Update parameters.
+        self.params['W1'] = self.params['W1'] - self.lr * self.vdW1 / (np.sqrt(self.sdW1) + self.epsilon)  
+        self.params['W2'] = self.params['W2'] - self.lr * self.vdW2 / (np.sqrt(self.sdW2) + self.epsilon)  
+        self.params['W3'] = self.params['W3'] - self.lr * self.vdW3 / (np.sqrt(self.sdW3) + self.epsilon)  
+        self.params['W4'] = self.params['W4'] - self.lr * self.vdW4 / (np.sqrt(self.sdW4) + self.epsilon)  
+        self.params['W5'] = self.params['W5'] - self.lr * self.vdW5 / (np.sqrt(self.sdW5) + self.epsilon)  
 
-        #RMSpop parameters.
+        self.params['b1'] = self.params['b1'] - self.lr * self.vdb1 / (np.sqrt(self.sdb1) + self.epsilon)  
+        self.params['b2'] = self.params['b2'] - self.lr * self.vdb2 / (np.sqrt(self.sdb2) + self.epsilon)  
+        self.params['b3'] = self.params['b3'] - self.lr * self.vdb3 / (np.sqrt(self.sdb3) + self.epsilon)  
+        self.params['b4'] = self.params['b4'] - self.lr * self.vdb4 / (np.sqrt(self.sdb4) + self.epsilon)  
+        self.params['b5'] = self.params['b5'] - self.lr * self.vdb5 / (np.sqrt(self.sdb5) + self.epsilon)  
 
-
+        
 class TanH():
+
     def __init__(self, alpha = 1.7159):
         self.alpha = alpha
         self.cache = None
