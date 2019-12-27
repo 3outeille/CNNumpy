@@ -101,6 +101,7 @@ class Conv():
         #Distribute error in bias (compute gradient of bias).
         for i in range(self.n_F):
             self.b['grad'][i, ...] = np.sum(dout[..., i])
+ 
                 
         #Compute padding needed to perform a full convolution.
         pad = int((1/2) * (self.f - n_H_dout + (n_H - 1) / self.s))
@@ -223,7 +224,6 @@ class Fc():
             Returns:
             - A_fc: new fully connected layer.
         """
-
         self.cache = fc
         A_fc = np.dot(self.W['val'], fc) + self.b['val']
         return A_fc
@@ -236,12 +236,12 @@ class Fc():
             Returns:
             - new_deltaL: error at current layer.
         """
-        A_prev = self.cache
-        m = A_prev.shape[0]
+        fc = self.cache
+        m = fc.shape[0]
         
         #Compute gradient.
-        self.W['grad'] = (1/m) * np.dot(deltaL, A_prev.T)
-        self.b['grad'] = (1/m) * np.sum(deltaL, axis = 1)
+        self.W['grad'] = (1/m) * np.dot(deltaL, fc.T)
+        self.b['grad'] = (1/m) * np.sum(deltaL, axis = 0)
         
         #Compute error.
         new_deltaL = np.dot(self.W['val'].T, deltaL) 
@@ -264,16 +264,17 @@ class AdamGD():
         #Initialize Momentum parameters.
         self.vdW1, self.vdb1 = np.zeros(self.params['W1'].shape), np.zeros(self.params['b1'].shape)
         self.vdW2, self.vdb2 = np.zeros(self.params['W2'].shape), np.zeros(self.params['b2'].shape)
-        self.vdW3, self.vdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape)
-        self.vdW4, self.vdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape)
-        self.vdW5, self.vdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape)
+        # self.vdW3, self.vdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape)
+        # self.vdW4, self.vdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape)
+        # self.vdW5, self.vdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape)
 
         #Initialize RMSpop parameters.
         self.sdW1, self.sdb1 = np.zeros(self.params['W1'].shape), np.zeros(self.params['b1'].shape) 
         self.sdW2, self.sdb2 = np.zeros(self.params['W2'].shape), np.zeros(self.params['b2'].shape) 
-        self.sdW3, self.sdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape) 
-        self.sdW4, self.sdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape) 
-        self.sdW5, self.sdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape) 
+        # self.sdW3, self.sdb3 = np.zeros(self.params['W3'].shape), np.zeros(self.params['b3'].shape) 
+        # self.sdW4, self.sdb4 = np.zeros(self.params['W4'].shape), np.zeros(self.params['b4'].shape) 
+        # self.sdW5, self.sdb5 = np.zeros(self.params['W5'].shape), np.zeros(self.params['b5'].shape) 
+
 
     def update_params(self, grads):
         """
@@ -282,45 +283,46 @@ class AdamGD():
         #Momentum update.
         self.vdW1 = (self.beta1 * self.vdW1) + (1 - self.beta1) * grads['dW1'] 
         self.vdW2 = (self.beta1 * self.vdW2) + (1 - self.beta1) * grads['dW2']
-        self.vdW3 = (self.beta1 * self.vdW3) + (1 - self.beta1) * grads['dW3']
-        self.vdW4 = (self.beta1 * self.vdW4) + (1 - self.beta1) * grads['dW4']
-        self.vdW5 = (self.beta1 * self.vdW5) + (1 - self.beta1) * grads['dW5']
+        # self.vdW3 = (self.beta1 * self.vdW3) + (1 - self.beta1) * grads['dW3']
+        # self.vdW4 = (self.beta1 * self.vdW4) + (1 - self.beta1) * grads['dW4']
+        # self.vdW5 = (self.beta1 * self.vdW5) + (1 - self.beta1) * grads['dW5']
                 
         self.vdb1 = (self.beta1 * self.vdb1) + (1 - self.beta1) * grads['db1']  
         self.vdb2 = (self.beta1 * self.vdb2) + (1 - self.beta1) * grads['db2'] 
-        self.vdb3 = (self.beta1 * self.vdb3) + (1 - self.beta1) * grads['db3'] 
-        self.vdb4 = (self.beta1 * self.vdb4) + (1 - self.beta1) * grads['db4'] 
-        self.vdb5 = (self.beta1 * self.vdb5) + (1 - self.beta1) * grads['db5'] 
+        # self.vdb3 = (self.beta1 * self.vdb3) + (1 - self.beta1) * grads['db3'] 
+        # self.vdb4 = (self.beta1 * self.vdb4) + (1 - self.beta1) * grads['db4'] 
+        # self.vdb5 = (self.beta1 * self.vdb5) + (1 - self.beta1) * grads['db5'] 
 
         #RMSpop update.
         self.sdW1 = (self.beta2 * self.sdW1) + (1 - self.beta2) * grads['dW1']**2 
         self.sdW2 = (self.beta2 * self.sdW2) + (1 - self.beta2) * grads['dW2']**2
-        self.sdW3 = (self.beta2 * self.sdW3) + (1 - self.beta2) * grads['dW3']**2
-        self.sdW4 = (self.beta2 * self.sdW4) + (1 - self.beta2) * grads['dW4']**2
-        self.sdW5 = (self.beta2 * self.sdW5) + (1 - self.beta2) * grads['dW5']**2
+        # self.sdW3 = (self.beta2 * self.sdW3) + (1 - self.beta2) * grads['dW3']**2
+        # self.sdW4 = (self.beta2 * self.sdW4) + (1 - self.beta2) * grads['dW4']**2
+        # self.sdW5 = (self.beta2 * self.sdW5) + (1 - self.beta2) * grads['dW5']**2
                 
         self.sdb1 = (self.beta2 * self.sdb1) + (1 - self.beta2) * grads['db1']**2  
         self.sdb2 = (self.beta2 * self.sdb2) + (1 - self.beta2) * grads['db2']**2 
-        self.sdb3 = (self.beta2 * self.sdb3) + (1 - self.beta2) * grads['db3']**2 
-        self.sdb4 = (self.beta2 * self.sdb4) + (1 - self.beta2) * grads['db4']**2 
-        self.sdb5 = (self.beta2 * self.sdb5) + (1 - self.beta2) * grads['db5']**2 
+        # self.sdb3 = (self.beta2 * self.sdb3) + (1 - self.beta2) * grads['db3']**2 
+        # self.sdb4 = (self.beta2 * self.sdb4) + (1 - self.beta2) * grads['db4']**2 
+        # self.sdb5 = (self.beta2 * self.sdb5) + (1 - self.beta2) * grads['db5']**2 
         
         #Update parameters.
         self.params['W1'] = self.params['W1'] - self.lr * self.vdW1 / (np.sqrt(self.sdW1) + self.epsilon)  
         self.params['W2'] = self.params['W2'] - self.lr * self.vdW2 / (np.sqrt(self.sdW2) + self.epsilon)  
-        self.params['W3'] = self.params['W3'] - self.lr * self.vdW3 / (np.sqrt(self.sdW3) + self.epsilon)  
-        self.params['W4'] = self.params['W4'] - self.lr * self.vdW4 / (np.sqrt(self.sdW4) + self.epsilon)  
-        self.params['W5'] = self.params['W5'] - self.lr * self.vdW5 / (np.sqrt(self.sdW5) + self.epsilon)  
+        # self.params['W3'] = self.params['W3'] - self.lr * self.vdW3 / (np.sqrt(self.sdW3) + self.epsilon)  
+        # self.params['W4'] = self.params['W4'] - self.lr * self.vdW4 / (np.sqrt(self.sdW4) + self.epsilon)  
+        # self.params['W5'] = self.params['W5'] - self.lr * self.vdW5 / (np.sqrt(self.sdW5) + self.epsilon)  
 
         self.params['b1'] = self.params['b1'] - self.lr * self.vdb1 / (np.sqrt(self.sdb1) + self.epsilon)  
         self.params['b2'] = self.params['b2'] - self.lr * self.vdb2 / (np.sqrt(self.sdb2) + self.epsilon)  
-        self.params['b3'] = self.params['b3'] - self.lr * self.vdb3 / (np.sqrt(self.sdb3) + self.epsilon)  
-        self.params['b4'] = self.params['b4'] - self.lr * self.vdb4 / (np.sqrt(self.sdb4) + self.epsilon)  
-        self.params['b5'] = self.params['b5'] - self.lr * self.vdb5 / (np.sqrt(self.sdb5) + self.epsilon)  
+        # self.params['b3'] = self.params['b3'] - self.lr * self.vdb3 / (np.sqrt(self.sdb3) + self.epsilon)  
+        # self.params['b4'] = self.params['b4'] - self.lr * self.vdb4 / (np.sqrt(self.sdb4) + self.epsilon)  
+        # self.params['b5'] = self.params['b5'] - self.lr * self.vdb5 / (np.sqrt(self.sdb5) + self.epsilon)  
 
-        
+        return self.params
+
 class TanH():
-
+ 
     def __init__(self, alpha = 1.7159):
         self.alpha = alpha
         self.cache = None
@@ -339,10 +341,32 @@ class TanH():
             Finishes computation of error by multiplying new_deltaL by the
             derivative of tanH.
             Parameters:
-            - new_deltaL: error computed in Fc.backward().
+            - new_deltaL: error previously computed.
         """
         X = self.cache
         return new_deltaL * (1 - np.tanh(X)**2)
+       
+class Relu():
+    """
+    ReLU activation layer
+    """
+    def __init__(self):
+        #print("Build ReLU")
+        self.cache = None
+
+    def forward(self, X):
+        #print("ReLU: _forward")
+        self.cache = X
+        out = X.copy()
+        out[out < 0] = 0
+        return out
+
+    def backward(self, dout):
+        #print("ReLU: _backward")
+        X = self.cache
+        dX = dout.copy()
+        dX[X <= 0] = 0
+        return dX
 
 class Softmax():
     
@@ -360,6 +384,7 @@ class Softmax():
 class CrossEntropyLoss():
 
     def __init__(self):
+        #self.BATCH_SIZE = BATCH_SIZE
         pass
     
     def get(self, y_pred, y):
@@ -369,7 +394,7 @@ class CrossEntropyLoss():
             -
             -
         """
-        loss = -np.sum(y * np.log(y_pred))
-        return loss
+        return -np.sum(y * np.log(y_pred))
+
 
 
