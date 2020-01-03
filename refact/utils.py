@@ -7,6 +7,7 @@ import gzip
 import os
 from skimage import transform
 import numpy as np
+import pickle
 
 def download_mnist(filename):
     """
@@ -70,10 +71,10 @@ def resize_batch(imgs):
         Parameters:
         -imgs: a numpy array of size [batch_size, 28 X 28].
     """
-    imgs = imgs.reshape((-1, 28, 28, 1))
-    resized_imgs = np.zeros((imgs.shape[0], 32, 32, 1))
+    imgs = imgs.reshape((-1, 1, 28, 28))
+    resized_imgs = np.zeros((imgs.shape[0], 1, 32, 32))
     for i in range(imgs.shape[0]):
-        resized_imgs[i, ..., 0] = transform.resize(imgs[i, ..., 0], (32, 32))
+        resized_imgs[i, 0, ...] = transform.resize(imgs[i, 0, ...], (32, 32))
     return resized_imgs
 
 
@@ -119,6 +120,49 @@ def save_params_to_file(model, filename):
     with open(filename,"wb") as f:
 	    pickle.dump(weights, f)
 
+def one_hot_encoding(Y):
+    """
+
+        Parameters:
+        -Y: 
+
+    """
+    N = Y.shape[0]
+    Z = np.zeros((N, 10))
+    Z[np.arange(N), Y] = 1
+    return Z.T
+
+def measure_performance(y_pred, y):
+    """
+        Returns the loss accuracy of the model after one epoch.
+
+        Parameters:
+        -y_pred: Model predictions of shape (10, BATCH_SIZE)
+        -y: Actual predictions.
+
+        Returns:
+        -accuracy: Accuracy of the model.
+    """
+    num_classes, batch_size = len(np.unique(y)), y_pred.shape[1]
+   
+    #Compute accuracy.
+    confusion_mat = np.zeros((num_classes, num_classes)) 
+
+    for batch in range(batch_size):
+        for i in range(num_classes):
+            for j in range(num_classes):
+                confusion_mat[i, j] += sum(y[np.where(y_pred[:, batch] == i)] == j)
+        
+    #Sum over diagonal.
+    TP = np.sum(np.diag(confusion_mat))
+    #Sum over each column minus diagonal elements.
+    FN = np.sum([np.sum(confusion_mat[:, i]) - confusion_mat[i, i] for i in range(num_classes)]) 
+
+    accuracy = (TP + FN) / (num_classes * batch_size)
+    
+    return accuracy
+
+
 def prettyPrint3D(M):
     """
         Displays a 3D matrix in a pretty way.
@@ -126,7 +170,7 @@ def prettyPrint3D(M):
         Parameters:
         -M: Matrix of shape (m, n_H, n_W, n_C) with m, the number 3D matrices.
     """
-    m, n_H, n_W, n_C = M.shape
+    m, n_C, n_H, n_W = M.shape
 
     for i in range(m):
         
@@ -138,9 +182,10 @@ def prettyPrint3D(M):
 
                 for j in range(n_W):
 
-                    print(M[i, h, j, c], end = " ")
+                    print(M[i, c, h, j], end = ",")
 
                 print("/", end='\n\n')
         
         print('-------------------', end='\n\n')
+
 
