@@ -1,87 +1,208 @@
-mport numpy as np
+#------------------
+#Utilities function
+#------------------
 
-def tanh(x, constA = 1.7159):
-    """
-        Apply tanh function to x.         
+import urllib.request
+import gzip
+import os
+from skimage import transform
+import numpy as np
+import pickle
 
-        Parameters:
-        -'x': input tensor.
-        -'constA': constant value.
+def download_mnist(filename):
     """
-    return constA * np.tanh(x)
 
-def dTanH(x):
     """
-        Apply derivative of tanh function to x.
+    base_url = "http://yann.lecun.com/exdb/mnist/"
+    for elt in filename:
+        print("Downloading " + elt[1] + " in data/ ...")
+        urllib.request.urlretrieve(base_url + elt[1], 'data/' + elt[1])
+    print("Download complete.")
 
-        Parameters:
-        -'x': input tensor.
-    """
-    return 1 - np.power(np.tanh(x), 2)
 
-def softmax(x):
+def extract_mnist(filename):
     """
-        Compute softmax values for each sets of scores in x.
-        
-        Parameters:
-        -'x': input vector.
-    """
-    return np.exp(x) / np.sum(np.exp(x), axis=0)
 
-def initializeFilter(n_f, f, n_C):
     """
-        Initialize parameters.
-            
-        Parameters:
-        -'n_f': number of filters.
-        -'f': size of filters.
-        -'n_C': number of channels.
-
-        Returns:
-        -'F': returns n_f weight of shape (f, f, n_C) 
-        -'b': returns n_f bias of shape (1, 1, n_C)
-   """
+    mnist = {}
+    for elt in filename[:2]:
+        print('Extracting data/' + elt[0] + '...')
+        with gzip.open('data/' + elt[1]) as f:
+            #According to the doc on MNIST website, offset for image starts at 16.
+            mnist[elt[0]] = np.frombuffer(f.read(), dtype=np.uint8, offset=16).reshape(-1, 28*28)
     
-    F = np.random.randn(n_f, f, f, n_C)
-    b = np.random.randn(n_f, 1, 1, n_C)    
+    for elt in filename[2:]:
+        print('Extracting data/' + elt[0] + '...')
+        with gzip.open('data/' + elt[1]) as f:
+            #According to the doc on MNIST website, offset for label starts at 8.
+            mnist[elt[0]] = np.frombuffer(f.read(), dtype=np.uint8, offset=8)
 
-    return F, b 
+    print('Extraction complete') 
 
-def initializeParamFc(x, y):
-    """      
-        Initialize parameters for fully connected layer.
+    return mnist
+
+def load(filename):
+    """
+
+    """
+    L = [elt[1] for elt in filename]   
+    count = 0 
+
+    #Check if the 4 .gz files exist.
+    for elt in L:
+        if os.path.isfile('data/' + elt):
+            count += 1
+
+    #If the 4 .gz are not in data/, we download and extract them.
+    if count != 4:
+        download_mnist(filename)
+        mnist = extract_mnist(filename)
+    else: #We just extract them.
+        mnist = extract_mnist(filename)
+
+    print('Loading complete')
+    return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
         
+
+def resize_batch(imgs):
+    """
+        Resizes a batch of MNIST images to (32, 32).
+
         Parameters:
-        -'x': row.
-        -'y': column.
+        -imgs: a numpy array of size [batch_size, 28 X 28].
+    """
+    imgs = imgs.reshape((-1, 1, 28, 28))
+    resized_imgs = np.zeros((imgs.shape[0], 1, 32, 32))
+    for i in range(imgs.shape[0]):
+        resized_imgs[i, 0, ...] = transform.resize(imgs[i, 0, ...], (32, 32))
+    return resized_imgs
+
+
+def get_batch(X, batch_size, t):
+    """
+
+    """
+    return X[t*batch_size : (t + 1)*batch_size]
+
+
+def load_params_from_file(model, filename):
+    """
+        Loads model parameters from a file.
+
+        Parameters:
+        -model: a CNN architecture.
+        -filename: name of file with extension 'pkl'.
+    """
+    pickle_in = open(filename, 'rb')
+    params = pickle.load(pickle_in)
+
+    model.conv1.W['val'] = params['W1']
+    model.conv2.W['val'] = params['W2']
+    model.fc1.W['val'] = params['W3']
+    model.fc2.W['val'] = params['W4']
+    model.fc3.W['val'] = params['W5'] 
+
+    model.conv1.b['val'] = params['b1']
+    model.conv2.b['val'] = params['b2']
+    model.fc1.b['val'] = params['b3']
+    model.fc2.b['val'] = params['b4']
+    model.fc3.b['val'] = params['b5'] 
+
+def save_params_to_file(model, filename):
+    """
+        Saves model parameters to a file.
+
+        Parameters:
+        -model: a CNN architecture.
+        -filename: name of file with extension 'pkl'.
+    """
+    weights = model.get_params()
+    with open(filename,"wb") as f:
+	    pickle.dump(weights, f)
+
+def one_hot_encoding(Y):
+    """
+
+        Parameters:
+        -Y: 
+
+    """
+    N = Y.shape[0]
+    Z = np.zeros((N, 10))
+    Z[np.arange(N), Y] = 1
+    return Z.T
+
+def measure_performance(y_pred, y):
+    """
+        Returns the loss accuracy of the model after one epoch.
+
+        Parameters:
+        -y_pred: Model predictions of shape (10, BATCH_SIZE)
+        -y: Actual predictions.
+
+        Returns:
+        -accuracy: Accuracy of the model.
+    """
+    batch_size = y_pred.shape[1]
+    
+    #Compute accuracy.
+    confusion_mat = np.zeros((2, 2)) 
+
+    for batch in range(batch_size):
+        for i in range(2):
+            for j in range(2):
+                confusion_mat[i, j] += np.sum(y[np.where(y_pred[:, batch] == i)] == j)
+
+    #Sum over diagonal.
+    TP = np.sum(np.diag(confusion_mat))
+    #Sum over each column minus diagonal elements.
+    FN = np.sum([np.sum(confusion_mat[:, i]) - confusion_mat[i, i] for i in range(2)]) 
+
+    accuracy = (TP + FN) / (2 * batch_size)
+    
+    return accuracy
+
+def train_val_split(X, y):
+    """
+        Splits X and y into training and validation set.
+
+        Parameters:
+        -
+        -
+        Returns:
+        -
+        -
+        -
+        -
+    """
+    X_train, X_val = X[:50000, :], X[50000:, :]
+    y_train, y_val = y[:50000], y[50000:]
+
+    return X_train, y_train, X_val, y_val
+
+def prettyPrint3D(M):
+    """
+        Displays a 3D matrix in a pretty way.
+
+        Parameters:
+        -M: Matrix of shape (m, n_H, n_W, n_C) with m, the number 3D matrices.
+    """
+    m, n_C, n_H, n_W = M.shape
+
+    for i in range(m):
         
-        Returns:
-        -'W_fc': fully connected output weight of size (x, y).
-        -'b_fc': fully connected output bias of size (x, 1).
-    """
-    W_fc = np.random.randn(x, y)
-    b_fc = np.random.randn(x, 1)
+        for c in range(n_C):
+            print('Image {}, channel {}'.format(i + 1, c + 1), end='\n\n')  
 
-    return W_fc, b_fc
+            for h in range(n_H):
+                print("/", end="")
 
-def costFunction(yHat, y):
-    """
-        Compute the error between yHat and y using cross entropy loss function.
+                for j in range(n_W):
 
-        Parameters:
-        -'yHat': prediction.
-        -'y': expected output.
+                    print(M[i, c, h, j], end = ",")
 
-        Returns:
-        -'deltaL': error.
-    """
-    #Softmax.
-    yHat = softmax(yHat) 
+                print("/", end='\n\n')
+        
+        print('-------------------', end='\n\n')
 
-    #Cross entropy loss.
-    deltaL = (1/y.shape(0)) * np.sum(y * np.log(yHat) + (1 - y) * np.log(1 - yHat))
-
-    deltaL = np.squeeze(deltaL) #It turns [[1]] into 1.
-
-    return deltaL
 

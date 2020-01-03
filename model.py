@@ -8,7 +8,7 @@ from utils import *
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-
+from sklearn.metrics import accuracy_score
 
 class LeNet5():
 
@@ -149,12 +149,14 @@ filename = [
 def train(filename):
     NB_EPOCH = 1
     ITER = 938
-    BATCH_SIZE = 2
+    BATCH_SIZE = 64
 
-    X_train, y_train, X_test, y_test = load(filename)
-    X_train, X_test = X_train/float(255), X_test/float(255)
-    X_train -= np.mean(X_train)
+    X, y, X_test, y_test = load(filename)
+    X, X_test = X/float(255), X_test/float(255)
+    X -= np.mean(X)
     X_test -= np.mean(X_test)
+
+    X_train, y_train, X_val, y_val = train_val_split(X, y)
 
     model = LeNet5()
     cost = CrossEntropyLoss()
@@ -166,30 +168,23 @@ def train(filename):
 
         for t in range(ITER):
             X_batch = resize_batch(get_batch(X_train, BATCH_SIZE, t))
-            y_batch_encoded = one_hot_encoding(get_batch(y_train, BATCH_SIZE, t))
-
+            y_batch = get_batch(y_train, BATCH_SIZE, t)
+            y_batch_encoded = one_hot_encoding(y_batch)
+    
             y_pred = model.forward(X_batch)
             loss, deltaL = cost.get(y_pred, y_batch_encoded)
             grads = model.backward(deltaL)
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            """
-            IDEA: transform y_pred = [0, 0.45, ..., 0,9] -> [0, 0, ..., 1]
-                +
-            Check (10, batch_size) or (batc_size, 10) of measure_performance()
-            """
-
-            #Not working !
-            # print(y_pred)
-            # tmp = np.zeros((10, BATCH_SIZE))
-            # tmp[np.arange(BATCH_SIZE), np.argmax(y_pred, axis = 0)] = 1
-
             costs.append(loss)
-            accuracy = measure_performance(y_pred, y_batch_encoded)
+            #accuracy = measure_performance(one_hot_encoding(np.argmax(y_pred, axis=0)).T, y_batch_encoded.T)
+            #accuracy = accuracy_score(y_batch_encoded.T, one_hot_encoding(np.argmax(y_pred, axis=0)).T)
+
+            accuracy = accuracy_score(y_batch, np.argmax(y_pred, axis=0))
 
             print('[Epoch {} | ITER {}] Loss: {} | Accuracy: {}'.format(epoch+1, t+1, loss, accuracy))
-
+        
             if loss < 3:
                 save_params_to_file(model, "loss_inferior_2.pkl")
 
@@ -206,7 +201,7 @@ def predict():
     X_test -= np.mean(X_test)
 
     model = LeNet5()
-    load_params_from_file(model,'weights.pkl')
+    load_params_from_file(model,'final_weights.pkl')
     
     image = resize_batch(X_train[0])
     y_pred = model.forward(image)
@@ -219,7 +214,8 @@ def predict():
     plt.imshow(pixels, cmap='gray')
     plt.show()
 
-predict()
+#predict()
+
 
 #--------------------------------------------
 """
