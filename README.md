@@ -1,5 +1,4 @@
-<img src="./img/logo.png" width="600"/>
-
+![](./img/logo.png)
 
 This is an implementation of LeNet-5 using only Numpy.
 
