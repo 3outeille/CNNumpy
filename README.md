@@ -1,4 +1,4 @@
-<img src="./img/logo.png" height="50%" width="50%" align="center">
+<img src="./img/logo.png" hspace="25%" width="60%">
 
 This is an implementation of LeNet-5 using only Numpy.
 
