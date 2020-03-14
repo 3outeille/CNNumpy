@@ -15,20 +15,22 @@ class Conv():
         #Initialize Weight/bias.
         self.W = {'val': np.random.randn(self.n_F, self.n_C, self.f, self.f),
                   'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
-        self.b = {'val': np.random.randn(self.n_F, self.n_C, 1, 1),
-                  'grad': np.zeros((self.n_F, self.n_C, 1, 1))}
+     
+        self.b = {'val': np.random.randn(self.n_F, 1),
+                  'grad': np.zeros((self.n_F, 1))}
 
         self.cache = None
 
     def forward(self, X):
         """
             Performs a forward convolution.
+           
             Parameters:
-            - A_prev: Last layer of shape (m, n_C_prev, n_H_prev, n_W_prev).
-                     If first convolution, A_prev = X.
+            - X : Last conv layer of shape (m, n_C_prev, n_H_prev, n_W_prev).
             Returns:
             - A_conv: previous layer convolved.
         """
+        self.cache = X
         m, n_C_prev, n_H_prev, n_W_prev = X.shape
 
         n_C = self.n_F
@@ -36,7 +38,8 @@ class Conv():
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
         out = np.zeros((m, n_C, n_H, n_W))
- 
+        
+
         for i in range(m): #For each image.
             
             for c in range(n_C): #For each channel.
@@ -50,85 +53,28 @@ class Conv():
                         w_end = w_start + self.f
 
                         out[i, c, h, w] = np.sum(X[i, :, h_start:h_end, w_start:w_end] 
-                                        * self.W['val'][c, ...]) + self.b['val'][c, ...][0][0][0]
-        self.cache = X
-
+                                        * self.W['val'][c, ...]) + self.b['val'][c, 0]
         return out 
 
     def backward(self, dout):
         """
             Distributes error from previous layer to convolutional layer and
             compute error for the current convolutional layer.
+
             Parameters:
             - A_prev_error: error from previous layer.
+            
             Returns:
             - deltaL: error of the current convolutional layer.
-        """
-        """
-        X = self.cache
-        
-        m, n_C, n_H, n_W = X.shape
-        _, n_C_dout, n_H_dout, n_W_dout = dout.shape
-        
-        #Compute dW.
-        for i in range(m): #For each examples.
-            
-            for c in range(n_C_dout): #Take one channel and duplicate it n_C time along depth axis.
-                
-                dout_tile = np.repeat(dout[i, c, :, :][np.newaxis, ...], repeats = n_C , axis = 0)
-                
-                for h in range(self.f):
-                    h_start = h * self.s
-                    h_end = h_start + n_H_dout
-
-                    for w in range(self.f):
-                        w_start = w * self.s
-                        w_end = w_start + n_W_dout
-
-                        self.W['grad'][c, ...] += np.sum(X[i, :, h_start:h_end, w_start:w_end] * dout_tile)
-
-        #Compute db.
-        for i in range(self.n_F):
-            self.b['grad'][i, ...] = np.sum(dout[:, i, ...])
-
-        #Compute padding needed to perform a full convolution.
-        pad = int((1/2) * (self.f - n_H_dout + (n_H - 1) * self.s))
-        dout_pad = np.pad(dout, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
-        #W_rot = np.rot90(np.rot90(self.W['val']))
-        W_rot = self.W['val']
-        dX = np.zeros(X.shape)
-        
-        #Compute dX.
-        for i in range(m): #For each examples.
-            
-            for c in range(self.n_C): #Take channel c of all weights matrices and duplicate it n_C_dout time along depth axis.
-                
-                W_rot_tile = W_rot[:, c, :, :].reshape((W_rot.shape[0], W_rot.shape[2], W_rot.shape[3]))
-                #W_rot_tile = np.repeat(W_rot[i, :, :, c][..., np.newaxis], repeats = n_C_dout , axis = 2)
-                #print('W_rot_tile: ' + str(W_rot_tile.shape))
-                
-                for h in range(n_H):
-                    h_start = h * self.s
-                    h_end = h_start + self.f
-                    
-                    #print(h_start, h_end, end='\n\n')
-
-                    for w in range(n_W):                
-                        w_start = w * self.s
-                        w_end = w_start + self.f
-                        
-                        #print(h, w, "dout_pad: " + str(dout_pad[i, h_start:h_end, w_start:w_end, :].shape))
-                        #print("W_rot_tile: " + str(W_rot_tile.shape), end='\n\n')
-
-                        dX[i, c, h, w] += np.sum(dout_pad[i, :, h_start:h_end, w_start:w_end] * W_rot_tile)
-
-        return dX, self.W['grad'], self.b['grad']
         """
         X = self.cache
         
         m, n_C, n_H, n_W = X.shape
         m, n_C_dout, n_H_dout, n_W_dout = dout.shape
         
+        W_rot = np.rot90(np.rot90(self.W['val']))
+        dX = np.zeros(X.shape)
+
         #Compute dW.
         for i in range(m): #For each examples.
             
@@ -142,33 +88,14 @@ class Conv():
                         w_start = w * self.s
                         w_end = w_start + self.f
 
-                        self.W['grad'][c, ...] = self.W['grad'][c, ...] + dout[i, c, h, w] * X[i, :, h_start:h_end, w_start:w_end]
+                        self.W['grad'][c, ...] += dout[i, c, h, w] * X[i, :, h_start:h_end, w_start:w_end]
+                        dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * W_rot[c, ...]
         #Compute db.
         for c in range(self.n_F):
             self.b['grad'][c, ...] = np.sum(dout[:, c, ...])
 
-        #pad = int((1/2) * (self.f - n_H_dout + (n_H - 1) * self.s))
-        #dout_pad = np.pad(dout, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
-        W_rot = np.rot90(np.rot90(self.W['val']))
-        #W_rot = self.W['val']
-        dX = np.zeros(X.shape)
-
-        for i in range(m): 
-            
-            for c in range(n_C_dout): #16
-
-                for h in range(n_H_dout): #10
-                    h_start = h * self.s
-                    h_end = h_start + self.f
-                    
-                    for w in range(n_W_dout): #10
-                        w_start = w * self.s
-                        w_end = w_start + self.f
-
-                        dX[i, :, h_start:h_end, w_start:w_end] =  dX[i, :, h_start:h_end, w_start:w_end] + dout[i, c, h, w] * W_rot[c, ...]
-        
         return dX, self.W['grad'], self.b['grad']
-
+        
 class AvgPool():
     
     def __init__(self, filter_size, stride):
@@ -179,8 +106,10 @@ class AvgPool():
     def forward(self, X):
         """
             Apply average pooling on A_conv_act.
+
             Parameters:
             - A_conv_act: Output of activation function.
+            
             Returns:
             - A_pool: A_conv_act squashed. 
         """
@@ -211,10 +140,12 @@ class AvgPool():
     def backward(self, dout):
         """
             Distributes error through pooling layer.
+
             Parameters:
-            - A_prev_error: Previous layer with the error.
+            - dout: Previous layer with the error.
+            
             Returns:
-            - A_pool_tmp: Temporary pooling layer with the error.
+            - dX: Conv layer updated with error.
         """
         X = self.cache
         m, n_C, n_H, n_W = dout.shape
@@ -253,8 +184,10 @@ class Fc():
     def forward(self, fc):
         """
             Performs a forward propagation between 2 fully connected layers.
+
             Parameters:
             - fc: fully connected layer.
+            
             Returns:
             - A_fc: new fully connected layer.
         """
@@ -265,24 +198,24 @@ class Fc():
     def backward(self, deltaL):
         """
             Returns the error of the current layer and compute gradients.
+
             Parameters:
             - deltaL: error at last layer.
+            
             Returns:
             - new_deltaL: error at current layer.
         """
         fc = self.cache
         m = fc.shape[0]
-        
+
         #Compute gradient.
         self.W['grad'] = (1/m) * np.dot(deltaL, fc.T)
         self.b['grad'] = (1/m) * np.sum(deltaL, axis = 0)
-        
       
         #Compute error.
         new_deltaL = np.dot(self.W['val'].T, deltaL) 
         #We still need to multiply new_deltaL by the derivative of the activation
-        #function which is done in TanH.backward() only when we have to backpropagate
-        #error through tanH.
+        #function which is done in TanH.backward().
 
         return new_deltaL, self.W['grad'], self.b['grad']
     
@@ -312,9 +245,6 @@ class AdamGD():
 
 
     def update_params(self, grads):
-        """
-
-        """
         #Momentum update.
         self.vdW1 = (self.beta1 * self.vdW1) + (1 - self.beta1) * grads['dW1'] 
         self.vdW2 = (self.beta1 * self.vdW2) + (1 - self.beta1) * grads['dW2']
@@ -365,6 +295,7 @@ class TanH():
     def forward(self, X):
         """
             Apply tanh function to X.
+
             Parameters:
             - X: input tensor.
         """
@@ -375,33 +306,12 @@ class TanH():
         """
             Finishes computation of error by multiplying new_deltaL by the
             derivative of tanH.
+
             Parameters:
             - new_deltaL: error previously computed.
         """
         X = self.cache
         return new_deltaL * (1 - np.tanh(X)**2)
-
-# class Relu():
-#     """
-#     ReLU activation layer
-#     """
-#     def __init__(self):
-#         #print("Build ReLU")
-#         self.cache = None
-
-#     def forward(self, X):
-#         #print("ReLU: _forward")
-#         self.cache = X
-#         out = X.copy()
-#         out[out < 0] = 0
-#         return out
-
-#     def backward(self, dout):
-#         #print("ReLU: _backward")
-#         X = self.cache
-#         dX = dout.copy()
-#         dX[X <= 0] = 0
-#         return dX
 
 class Softmax():
     
@@ -411,6 +321,7 @@ class Softmax():
     def forward(self, X):
         """
             Compute softmax values for each sets of scores in X.
+
             Parameters:
             - X: input vector.
         """
@@ -426,8 +337,8 @@ class CrossEntropyLoss():
             Return the negative log likelihood and the error at the last layer.
             
             Parameters:
-            -
-            -
+            - y_pred: model predictions.
+            - y: true ground labels.
         """
         batch_size = y_pred.shape[1]
         deltaL = y_pred - y    

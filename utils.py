@@ -10,9 +10,6 @@ import numpy as np
 import pickle
 
 def download_mnist(filename):
-    """
-
-    """
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for elt in filename:
         print("Downloading " + elt[1] + " in data/ ...")
@@ -21,9 +18,6 @@ def download_mnist(filename):
 
 
 def extract_mnist(filename):
-    """
-
-    """
     mnist = {}
     for elt in filename[:2]:
         print('Extracting data/' + elt[0] + '...')
@@ -42,9 +36,6 @@ def extract_mnist(filename):
     return mnist
 
 def load(filename):
-    """
-
-    """
     L = [elt[1] for elt in filename]   
     count = 0 
 
@@ -79,9 +70,6 @@ def resize_batch(imgs):
 
 
 def get_batch(X, batch_size, t):
-    """
-
-    """
     return X[t*batch_size : (t + 1)*batch_size]
 
 
@@ -120,60 +108,15 @@ def save_params_to_file(model, filename):
     with open(filename,"wb") as f:
 	    pickle.dump(weights, f)
 
-def one_hot_encoding(Y):
-    """
-
-        Parameters:
-        -Y: 
-
-    """
-    N = Y.shape[0]
+def one_hot_encoding(y):
+    N = y.shape[0]
     Z = np.zeros((N, 10))
-    Z[np.arange(N), Y] = 1
+    Z[np.arange(N), y] = 1
     return Z.T
-
-def measure_performance(y_pred, y):
-    """
-        Returns the loss accuracy of the model after one epoch.
-
-        Parameters:
-        -y_pred: Model predictions of shape (10, BATCH_SIZE)
-        -y: Actual predictions.
-
-        Returns:
-        -accuracy: Accuracy of the model.
-    """
-    batch_size = y_pred.shape[1]
-    
-    #Compute accuracy.
-    confusion_mat = np.zeros((2, 2)) 
-
-    for batch in range(batch_size):
-        for i in range(2):
-            for j in range(2):
-                confusion_mat[i, j] += np.sum(y[np.where(y_pred[:, batch] == i)] == j)
-
-    #Sum over diagonal.
-    TP = np.sum(np.diag(confusion_mat))
-    #Sum over each column minus diagonal elements.
-    FN = np.sum([np.sum(confusion_mat[:, i]) - confusion_mat[i, i] for i in range(2)]) 
-
-    accuracy = (TP + FN) / (2 * batch_size)
-    
-    return accuracy
 
 def train_val_split(X, y):
     """
         Splits X and y into training and validation set.
-
-        Parameters:
-        -
-        -
-        Returns:
-        -
-        -
-        -
-        -
     """
     X_train, X_val = X[:50000, :], X[50000:, :]
     y_train, y_val = y[:50000], y[50000:]

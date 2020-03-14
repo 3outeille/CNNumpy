@@ -8,12 +8,8 @@ This is an implementation of LeNet-5 using only Numpy.
 
 ![](./img/lenet5-model.png)
 
-# Results (temporary)
+# Results 
 
 Training plot of loss function over 1 epoch.
 
 <img src="./img/final.png" width="50%">
-
-# TO DO
-
-- Fix bug in backpropagation at conv layer.
