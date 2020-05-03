@@ -32,7 +32,7 @@ def extract_mnist(filename):
             #According to the doc on MNIST website, offset for label starts at 8.
             mnist[elt[0]] = np.frombuffer(f.read(), dtype=np.uint8, offset=8)
 
-    print('Extraction complete') 
+    print('Files extraction: OK') 
 
     return mnist
 
@@ -52,7 +52,7 @@ def load(filename):
     else: #We just extract them.
         mnist = extract_mnist(filename)
 
-    print('Loading complete')
+    print('Loading dataset: OK')
     return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
         
 
@@ -65,12 +65,10 @@ def resize_dataset(dataset):
     """
     return transform.resize(dataset, (dataset.shape[0], 1, 32, 32))
 
-def dataloader(X, y, batch_size):
-    t = 0
-    n = X.shape[0] // batch_size
-    for i in range(n):
-        yield X[t:t+batch_size, ...], y[t:t+batch_size, ...]
-        t += batch_size
+def dataloader(X, y, BATCH_SIZE):
+    n = len(X)
+    for t in range(0, n, BATCH_SIZE):
+        yield X[t:t+BATCH_SIZE, ...], y[t:t+BATCH_SIZE, ...]
         
 def one_hot_encoding(y):
     N = y.shape[0]
