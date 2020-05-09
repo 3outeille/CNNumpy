@@ -14,6 +14,8 @@ class NN():
         self.fc4 = Fc(row = 10 , column = 128)
         self.softmax = Softmax()
 
+        self.layers = [self.fc1, self.fc2, self.fc3, self.fc4]
+
     def forward(self, X):
         #print(X.shape)
         flatten = X.reshape(X.shape[0], -1)
@@ -60,21 +62,30 @@ class NN():
         return grads
 
     def get_params(self):
-        params = {      
-            'W1': self.fc1.W['val'], 'b1': self.fc1.b['val'], 
-            'W2': self.fc2.W['val'], 'b2': self.fc2.b['val'], 
-            'W3': self.fc3.W['val'], 'b3': self.fc3.b['val'], 
-            'W4': self.fc4.W['val'], 'b4': self.fc4.b['val'],
-        }  
+        params = {}
+        for i, layer in enumerate(self.layers):
+            params['W' + str(i+1)] = layer.W['val']
+            params['b' + str(i+1)] = layer.b['val']
+
+        # params = {      
+        #     'W1': self.fc1.W['val'], 'b1': self.fc1.b['val'], 
+        #     'W2': self.fc2.W['val'], 'b2': self.fc2.b['val'], 
+        #     'W3': self.fc3.W['val'], 'b3': self.fc3.b['val'], 
+        #     'W4': self.fc4.W['val'], 'b4': self.fc4.b['val'],
+        # }  
         return params
 
     def set_params(self, params):
-        self.fc1.W['val'] = params['W1']
-        self.fc2.W['val'] = params['W2']
-        self.fc3.W['val'] = params['W3'] 
-        self.fc4.W['val'] = params['W4'] 
+        for i, layer in enumerate(self.layers):
+            layer.W['val'] = params['W'+ str(i+1)]
+            layer.b['val'] = params['b' + str(i+1)]
+      
+        # self.fc1.W['val'] = params['W1']
+        # self.fc2.W['val'] = params['W2']
+        # self.fc3.W['val'] = params['W3'] 
+        # self.fc4.W['val'] = params['W4'] 
 
-        self.fc1.b['val'] = params['b1']
-        self.fc2.b['val'] = params['b2']
-        self.fc3.b['val'] = params['b3'] 
-        self.fc4.b['val'] = params['b4'] 
+        # self.fc1.b['val'] = params['b1']
+        # self.fc2.b['val'] = params['b2']
+        # self.fc3.b['val'] = params['b3'] 
+        # self.fc4.b['val'] = params['b4'] 

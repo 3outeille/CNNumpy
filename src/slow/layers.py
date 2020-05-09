@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class Conv():
     """
@@ -12,11 +13,13 @@ class Conv():
         self.s = stride
         self.p = padding
 
-        #Initialize Weight/bias.
-        self.W = {'val': np.random.randn(self.n_F, self.n_C, self.f, self.f),
+
+        #Xavier initialization.
+        bound = 1 / math.sqrt(self.f * self.f)
+        self.W = {'val': np.random.uniform(-bound, bound, size=(self.n_F, self.n_C, self.f, self.f)),
                   'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
      
-        self.b = {'val': np.random.randn(self.n_F),
+        self.b = {'val': np.random.uniform(-bound, bound, size=(self.n_F)),
                   'grad': np.zeros((self.n_F))}
 
         self.cache = None
@@ -38,7 +41,6 @@ class Conv():
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
         out = np.zeros((m, n_C, n_H, n_W))
-        
 
         for i in range(m): #For each image.
             
@@ -78,7 +80,7 @@ class Conv():
         #Compute dW.
         for i in range(m): #For each examples.
             
-            for c in range(n_C_dout): #Take one channel and duplicate it n_C time along depth axis.
+            for c in range(n_C_dout):
                 
                 for h in range(n_H_dout):
                     h_start = h * self.s
@@ -93,7 +95,7 @@ class Conv():
         #Compute db.
         for c in range(self.n_F):
             self.b['grad'][c, ...] = np.sum(dout[:, c, ...])
-
+        
         return dX, self.W['grad'], self.b['grad']
         
 class AvgPool():
@@ -233,7 +235,6 @@ class SGD():
             self.params[key] += - self.lr * grads['d' + key]
 
         return self.params        
-
 
 class AdamGD():
 
