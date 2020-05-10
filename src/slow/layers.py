@@ -31,7 +31,7 @@ class Conv():
             Parameters:
             - X : Last conv layer of shape (m, n_C_prev, n_H_prev, n_W_prev).
             Returns:
-            - out: previous layer convolved.
+            - out: output of convolution.
         """
         self.cache = X
         m, n_C_prev, n_H_prev, n_W_prev = X.shape
