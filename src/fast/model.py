@@ -24,26 +24,30 @@ class LeNet5():
         self.fc3 = Fc(row = 10 , column = 84)
         self.softmax = Softmax()
 
+        self.layers = [self.conv1, self.conv2, self.fc1, self.fc2, self.fc3]
+
+
     def forward(self, X):
         conv1 = self.conv1.forward(X) #(6x28x28)
         act1 = self.tanh1.forward(conv1)
         pool1 = self.pool1.forward(act1) #(6x14x14)
-    
+
         conv2 = self.conv2.forward(pool1) #(16x10x10)
         act2 = self.tanh2.forward(conv2)
         pool2 = self.pool2.forward(act2) #(16x5x5)
         
+
         self.pool2_shape = pool2.shape #Need it in backpropagation.
-        pool2_flatten = pool2.reshape(-1, self.pool2_shape[0]) #(400x1)
-        
-        fc1 = self.fc1.forward(pool2_flatten) #(120x1)
+        pool2_flatten = pool2.reshape(self.pool2_shape[0], -1) #(1x400)
+    
+        fc1 = self.fc1.forward(pool2_flatten) #(1x120)
         act3 = self.tanh3.forward(fc1)
-
-        fc2 = self.fc2.forward(act3) #(84x1)
+        
+        fc2 = self.fc2.forward(act3) #(1x84)
         act4 = self.tanh4.forward(fc2)
-
-        fc3 = self.fc3.forward(act4) #(10x1)
-
+        
+        fc3 = self.fc3.forward(act4) #(1x10)
+    
         y_pred = self.softmax.forward(fc3)
 
         return y_pred
@@ -52,37 +56,37 @@ class LeNet5():
         #Compute gradient for weight/bias between fc3 and fc2.
         deltaL, dW5, db5, = self.fc3.backward(deltaL)
         #Compute error at fc2 layer.
-        deltaL = self.tanh4.backward(deltaL) #(84x1) 
-
+        deltaL = self.tanh4.backward(deltaL) #(1x84) 
+        
         #Compute gradient for weight/bias between fc2 and fc1.
         deltaL, dW4, db4 = self.fc2.backward(deltaL)
         #Compute error at fc1 layer.
-        deltaL = self.tanh3.backward(deltaL) #(120x1)
-
+        deltaL = self.tanh3.backward(deltaL) #(1x120)
+        
         #Compute gradient for weight/bias between fc1 and pool2 and compute 
         #error too (don't need to backpropagate through tanh here).
-        deltaL, dW3, db3 = self.fc1.backward(deltaL) #(400x1)
-        deltaL = deltaL.reshape(self.pool2_shape) #(5x5x16)
-
+        deltaL, dW3, db3 = self.fc1.backward(deltaL) #(1x400)
+        deltaL = deltaL.reshape(self.pool2_shape) #(16x5x5)
+        
         #Distribute error through pool2 to conv2.
-        deltaL = self.pool2.backward(deltaL) #(10x10x16)
+        deltaL = self.pool2.backward(deltaL) #(16x10x10)
         #Distribute error through tanh.
         deltaL = self.tanh2.backward(deltaL)
-       
+        
         #Compute gradient for weight/bias at conv2 layer and backpropagate
         #error to conv1 layer.
-        deltaL, dW2, db2 = self.conv2.backward(deltaL) #(14x14x16)
+        deltaL, dW2, db2 = self.conv2.backward(deltaL) #(6x14x14)
 
         #Distribute error through pool1 by creating a temporary pooling layer
         #of conv1 shape.
-        deltaL = self.pool1.backward(deltaL) #(28x28x6)
+        deltaL = self.pool1.backward(deltaL) #(6x28x28)
         #Distribute error through tanh.
         deltaL = self.tanh1.backward(deltaL)
+    
         #Compute gradient for weight/bias at conv1 layer and backpropagate
         #error at conv1 layer.
-        deltaL, dW1, db1 = self.conv1.backward(deltaL)
-        #print(deltaL_5.shape)
-        
+        deltaL, dW1, db1 = self.conv1.backward(deltaL) #(1x32x32)
+    
         grads = { 
                 'dW1': dW1, 'db1': db1,
                 'dW2': dW2, 'db2': db2, 
@@ -95,25 +99,14 @@ class LeNet5():
 
 
     def get_params(self):
-        params = {      
-            'W1': self.conv1.W['val'], 'b1': self.conv1.b['val'],
-            'W2': self.conv2.W['val'], 'b2': self.conv2.b['val'],
-            'W3': self.fc1.W['val'], 'b3': self.fc1.b['val'], 
-            'W4': self.fc2.W['val'], 'b4': self.fc2.b['val'], 
-            'W5': self.fc3.W['val'], 'b5': self.fc3.b['val']
-        }  
+        params = {}
+        for i, layer in enumerate(self.layers):
+            params['W' + str(i+1)] = layer.W['val']
+            params['b' + str(i+1)] = layer.b['val']
 
         return params
 
     def set_params(self, params):
-        self.conv1.W['val'] = params['W1']
-        self.conv2.W['val'] = params['W2']
-        self.fc1.W['val'] = params['W3']
-        self.fc2.W['val'] = params['W4']
-        self.fc3.W['val'] = params['W5'] 
-
-        self.conv1.b['val'] = params['b1']
-        self.conv2.b['val'] = params['b2']
-        self.fc1.b['val'] = params['b3']
-        self.fc2.b['val'] = params['b4']
-        self.fc3.b['val'] = params['b5'] 
+        for i, layer in enumerate(self.layers):
+            layer.W['val'] = params['W'+ str(i+1)]
+            layer.b['val'] = params['b' + str(i+1)]

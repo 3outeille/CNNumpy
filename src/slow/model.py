@@ -104,29 +104,9 @@ class LeNet5():
             params['W' + str(i+1)] = layer.W['val']
             params['b' + str(i+1)] = layer.b['val']
 
-        # params = {      
-        #     'W1': self.conv1.W['val'], 'b1': self.conv1.b['val'],
-        #     'W2': self.conv2.W['val'], 'b2': self.conv2.b['val'],
-        #     'W3': self.fc1.W['val'], 'b3': self.fc1.b['val'], 
-        #     'W4': self.fc2.W['val'], 'b4': self.fc2.b['val'], 
-        #     'W5': self.fc3.W['val'], 'b5': self.fc3.b['val']
-        # }  
-
         return params
 
     def set_params(self, params):
         for i, layer in enumerate(self.layers):
             layer.W['val'] = params['W'+ str(i+1)]
             layer.b['val'] = params['b' + str(i+1)]
-            
-        # self.conv1.W['val'] = params['W1']
-        # self.conv2.W['val'] = params['W2']
-        # self.fc1.W['val'] = params['W3']
-        # self.fc2.W['val'] = params['W4']
-        # self.fc3.W['val'] = params['W5'] 
-
-        # self.conv1.b['val'] = params['b1']
-        # self.conv2.b['val'] = params['b2']
-        # self.fc1.b['val'] = params['b3']
-        # self.fc2.b['val'] = params['b4']
-        # self.fc3.b['val'] = params['b5'] 

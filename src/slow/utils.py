@@ -11,6 +11,18 @@ import numpy as np
 import pickle
 
 def download_mnist(filename):
+    """
+        Downloads dataset from filename.
+
+        Parameters:
+        - filename: [
+                        ["training_images","train-images-idx3-ubyte.gz"],
+                        ["test_images","t10k-images-idx3-ubyte.gz"],
+                        ["training_labels","train-labels-idx1-ubyte.gz"],
+                        ["test_labels","t10k-labels-idx1-ubyte.gz"]
+             ]
+]
+    """
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for elt in filename:
         print("Downloading " + elt[1] + " in data/ ...")
@@ -19,6 +31,18 @@ def download_mnist(filename):
 
 
 def extract_mnist(filename):
+    """
+        Extracts dataset from filename.
+
+        Parameters:
+        - filename: [
+                        ["training_images","train-images-idx3-ubyte.gz"],
+                        ["test_images","t10k-images-idx3-ubyte.gz"],
+                        ["training_labels","train-labels-idx1-ubyte.gz"],
+                        ["test_labels","t10k-labels-idx1-ubyte.gz"]
+             ]
+]
+    """
     mnist = {}
     for elt in filename[:2]:
         print('Extracting data/' + elt[0] + '...')
@@ -37,6 +61,18 @@ def extract_mnist(filename):
     return mnist
 
 def load(filename):
+    """
+        Loads dataset to variables.
+
+        Parameters:
+        - filename: [
+                        ["training_images","train-images-idx3-ubyte.gz"],
+                        ["test_images","t10k-images-idx3-ubyte.gz"],
+                        ["training_labels","train-labels-idx1-ubyte.gz"],
+                        ["test_labels","t10k-labels-idx1-ubyte.gz"]
+             ]
+]
+    """
     L = [elt[1] for elt in filename]   
     count = 0 
 
@@ -66,11 +102,24 @@ def resize_dataset(dataset):
     return transform.resize(dataset, (dataset.shape[0], 1, 32, 32))
 
 def dataloader(X, y, BATCH_SIZE):
+    """
+        Returns a data generator.
+
+        Parameters:
+        - X: dataset examples.
+        - y: ground truth labels.
+    """
     n = len(X)
     for t in range(0, n, BATCH_SIZE):
         yield X[t:t+BATCH_SIZE, ...], y[t:t+BATCH_SIZE, ...]
         
 def one_hot_encoding(y):
+    """
+        Performs one-hot-encoding on y.
+        
+        Parameters:
+        - y: ground truth labels.
+    """
     N = y.shape[0]
     Z = np.zeros((N, 10))
     Z[np.arange(N), y] = 1
@@ -79,6 +128,10 @@ def one_hot_encoding(y):
 def train_val_split(X, y):
     """
         Splits X and y into training and validation set.
+
+        Parameters:
+        - X: dataset examples.
+        - y: ground truth labels.
     """
     X_train, X_val = X[:50000, :], X[50000:, :]
     y_train, y_val = y[:50000, :], y[50000:, :]

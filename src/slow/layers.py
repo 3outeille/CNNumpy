@@ -31,7 +31,7 @@ class Conv():
             Parameters:
             - X : Last conv layer of shape (m, n_C_prev, n_H_prev, n_W_prev).
             Returns:
-            - A_conv: previous layer convolved.
+            - out: previous layer convolved.
         """
         self.cache = X
         m, n_C_prev, n_H_prev, n_W_prev = X.shape
@@ -64,17 +64,19 @@ class Conv():
             compute error for the current convolutional layer.
 
             Parameters:
-            - A_prev_error: error from previous layer.
+            - dout: error from previous layer.
             
             Returns:
-            - deltaL: error of the current convolutional layer.
+            - dX: error of the current convolutional layer.
+            - self.W['grad']: weights gradient.
+            - self.b['grad']: bias gradient.
         """
         X = self.cache
         
         m, n_C, n_H, n_W = X.shape
         m, n_C_dout, n_H_dout, n_W_dout = dout.shape
         
-        W_rot = np.rot90(np.rot90(self.W['val']))
+        #W_rot = np.rot90(np.rot90(self.W['val']))
         dX = np.zeros(X.shape)
 
         #Compute dW.
@@ -91,7 +93,8 @@ class Conv():
                         w_end = w_start + self.f
 
                         self.W['grad'][c, ...] += dout[i, c, h, w] * X[i, :, h_start:h_end, w_start:w_end]
-                        dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * W_rot[c, ...]
+                        #dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * W_rot[c, ...]
+                        dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * self.W['val'][c, ...]
         #Compute db.
         for c in range(self.n_F):
             self.b['grad'][c, ...] = np.sum(dout[:, c, ...])
@@ -107,13 +110,13 @@ class AvgPool():
 
     def forward(self, X):
         """
-            Apply average pooling on A_conv_act.
+            Apply average pooling.
 
             Parameters:
-            - A_conv_act: Output of activation function.
+            - X: Output of activation function.
             
             Returns:
-            - A_pool: A_conv_act squashed. 
+            - A_pool: X after average pooling layer. 
         """
         m, n_C_prev, n_H_prev, n_W_prev = X.shape
         
@@ -207,6 +210,8 @@ class Fc():
             
             Returns:
             - new_deltaL: error at current layer.
+            - self.W['grad']: weights gradient.
+            - self.b['grad']: bias gradient.    
         """
         fc = self.cache
         m = fc.shape[0]
@@ -316,7 +321,7 @@ class CrossEntropyLoss():
             
             Parameters:
             - y_pred: model predictions.
-            - y: true ground labels.
+            - y: ground truth labels.
         """
         batch_size = y_pred.shape[1]
         deltaL = y_pred - y
