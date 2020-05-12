@@ -76,7 +76,6 @@ class Conv():
         m, n_C, n_H, n_W = X.shape
         m, n_C_dout, n_H_dout, n_W_dout = dout.shape
         
-        #W_rot = np.rot90(np.rot90(self.W['val']))
         dX = np.zeros(X.shape)
 
         #Compute dW.
@@ -93,7 +92,6 @@ class Conv():
                         w_end = w_start + self.f
 
                         self.W['grad'][c, ...] += dout[i, c, h, w] * X[i, :, h_start:h_end, w_start:w_end]
-                        #dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * W_rot[c, ...]
                         dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * self.W['val'][c, ...]
         #Compute db.
         for c in range(self.n_F):
