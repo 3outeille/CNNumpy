@@ -152,7 +152,7 @@ class AvgPool():
         """
         X = self.cache
         m, n_C, n_H, n_W = dout.shape
-        dX = np.copy(X)        
+        dX = np.zeros(X.shape)        
 
         for i in range(m):
             
