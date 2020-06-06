@@ -21,8 +21,7 @@ def download_mnist(filename):
                         ["test_images","t10k-images-idx3-ubyte.gz"],
                         ["training_labels","train-labels-idx1-ubyte.gz"],
                         ["test_labels","t10k-labels-idx1-ubyte.gz"]
-             ]
-]
+                    ]
     """
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for elt in filename:
@@ -41,8 +40,7 @@ def extract_mnist(filename):
                         ["test_images","t10k-images-idx3-ubyte.gz"],
                         ["training_labels","train-labels-idx1-ubyte.gz"],
                         ["test_labels","t10k-labels-idx1-ubyte.gz"]
-             ]
-]
+                    ]
     """
     mnist = {}
     for elt in filename[:2]:
@@ -91,18 +89,26 @@ def load(filename):
 
     print('Loading dataset: OK')
     return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
-        
-
+    
 def resize_dataset(dataset):
     """
         Resizes dataset of MNIST images to (32, 32).
 
         Parameters:
         -dataset: a numpy array of size [?, 1, 28, 28].
-    """
-    patches = [10000]*6
+    """        
+    args = [dataset[i:i+1000] for i in range(0, len(dataset), 1000)]
 
-    return transform.resize(dataset, (dataset.shape[0], 1, 32, 32))
+    def f(chunk):
+        return transform.resize(chunk, (chunk.shape[0], 1, 32, 32))
+
+    with cf.ThreadPoolExecutor() as executor:
+        res = executor.map(f,  args)
+    
+    res = np.array([*res])
+    res = res.reshape(-1, 1, 32, 32)
+    return res
+
 
 def dataloader(X, y, BATCH_SIZE):
     """

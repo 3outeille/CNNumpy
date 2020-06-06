@@ -50,7 +50,7 @@ def test():
 
         test_loss += loss * BATCH_SIZE
         test_acc += sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))
-
+        
         pbar.set_description("Evaluation")
     
     test_loss /= nb_test_examples

@@ -20,8 +20,7 @@ class Conv():
         self.W = {'val': np.random.uniform(-bound, bound, size=(self.n_F, self.n_C, self.f, self.f)),
                   'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
      
-        self.b = {'val': np.random.uniform(-bound, bound, size=(self.n_F)),
-                  'grad': np.zeros((self.n_F))}
+        self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
 
         self.cache = None
 
@@ -130,32 +129,11 @@ class AvgPool():
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
-        dout_flatten = dout.reshape(n_C, -1) / (self.f * self.f)
-        dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0) / (self.f*self.f)
+        dout_flatten = dout.reshape(n_C, -1)
+        dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0) / (self.f * self.f)
         dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
 
         return dX
-        
-        # X = self.cache
-        # m, n_C, n_H, n_W = dout.shape    
-        # dX = np.zeros(X.shape)
-
-        # for i in range(m):
-            
-        #     for c in range(n_C):
-
-        #         for h in range(n_H):
-        #             h_start = h * self.s
-        #             h_end = h_start + self.f
-
-        #             for w in range(n_W):
-        #                 w_start = w * self.s
-        #                 w_end = w_start + self.f
-                    
-        #                 average = dout[i, c, h, w] / (n_H * n_W)
-        #                 filter_average = np.full((self.f, self.f), average)
-        #                 dX[i, c, h_start:h_end, w_start:w_end] += filter_average       
-        # return dX
 
 class Fc():
 
@@ -166,7 +144,7 @@ class Fc():
         #Initialize Weight/bias.
         bound = 1 / np.sqrt(self.row)
         self.W = {'val': np.random.uniform(low=-bound, high=bound, size=(self.row, self.col)), 'grad': 0}
-        self.b = {'val': np.random.uniform(low=-bound, high=bound, size=(1, self.row)), 'grad': 0}
+        self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
         
         self.cache = None
 
@@ -218,7 +196,6 @@ class SGD():
         self.params = params
 
     def update_params(self, grads):
-        #print('Update Params')
         for key in self.params:
             self.params[key] += - self.lr * grads['d' + key]
 
@@ -309,5 +286,5 @@ class CrossEntropyLoss():
         batch_size = y_pred.shape[1]
         deltaL = y_pred - y
         loss = -np.sum(y * np.log(y_pred)) / batch_size
-        return loss, deltaL
         
+        return loss, deltaL

@@ -37,13 +37,13 @@ def toy_train():
     
     params = model.get_params()
 
-    optimizer = AdamGD(lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
+    optimizer = AdamGD(lr = 0.1, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
     train_costs, val_costs = [], []
     
     print("----------------TRAINING-----------------\n")
 
     NB_EPOCH = 15
-    BATCH_SIZE = 32
+    BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
     print("BATCH_SIZE: {}".format(BATCH_SIZE))
@@ -67,7 +67,6 @@ def toy_train():
         train_loader = dataloader(X_train, y_train, BATCH_SIZE)
 
         for i, (X_batch, y_batch) in zip(pbar, train_loader):
-           
             y_pred = model.forward(X_batch)
             loss, deltaL = cost.get(y_pred, y_batch)
             
@@ -93,8 +92,8 @@ def train():
     print("\n----------------EXTRACTION---------------\n")
     X, y, X_test, y_test = load(filename)
     X, X_test = X/float(255), X_test/float(255)
-    X -= np.mean(X)
-    X_test -= np.mean(X_test)
+    X = (X - np.mean(X))/ np.std(X)
+    X_test = (X_test - np.mean(X_test))/ np.std(X_test)
     
     print("\n--------------PREPROCESSING--------------\n")
     X = resize_dataset(X)
@@ -110,12 +109,13 @@ def train():
     params = model.get_params()
 
     optimizer = AdamGD(lr = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
+    #optimizer = SGD(lr=0.01, params=model.get_params())
     train_costs, val_costs = [], []
     
     print("----------------TRAINING-----------------\n")
 
-    NB_EPOCH = 10
-    BATCH_SIZE = 128
+    NB_EPOCH = 20
+    BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
     print("BATCH_SIZE: {}".format(BATCH_SIZE))
@@ -205,21 +205,21 @@ def train():
 
     pbar.close()
 
-    # fig = plt.figure(figsize=(10,10))
-    # fig.add_subplot(2, 1, 1)
+    fig = plt.figure(figsize=(10,10))
+    fig.add_subplot(2, 1, 1)
 
-    # plt.plot(train_costs)
-    # plt.title("Training loss")
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
+    plt.plot(train_costs)
+    plt.title("Training loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
 
-    # fig.add_subplot(2, 1, 2)
-    # plt.plot(val_costs)
-    # plt.title("Validation loss")
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
+    fig.add_subplot(2, 1, 2)
+    plt.plot(val_costs)
+    plt.title("Validation loss")
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
 
-    # plt.show()
+    plt.show()
 
 train()
 #toy_train()
