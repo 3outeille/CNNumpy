@@ -1,3 +1,4 @@
+from utils import get_indices, im2col, col2im
 import numpy as np
 import math
 
@@ -33,30 +34,22 @@ class Conv():
             Returns:
             - out: previous layer convolved.
         """
-        self.cache = X
         m, n_C_prev, n_H_prev, n_W_prev = X.shape
 
         n_C = self.n_F
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
-        out = np.zeros((m, n_C, n_H, n_W))
+        X_col = im2col(X, self.f, self.f, self.s, self.p)
+        w_col = self.W['val'].reshape((self.n_F, -1))
+        b_col = self.b['val'].reshape(-1, 1)
+        # Perform matrix multiplication.
+        out = w_col @ X_col + b_col
+        # Reshape back matrix to image.
+        out = out.reshape((m, n_C, n_H, n_W))
 
-        for i in range(m): #For each image.
-            
-            for c in range(n_C): #For each channel.
-
-                for h in range(n_H): #Slide the filter vertically.
-                    h_start = h * self.s
-                    h_end = h_start + self.f
-                    
-                    for w in range(n_W): #Slide the filter horizontally.                
-                        w_start = w * self.s
-                        w_end = w_start + self.f
-
-                        out[i, c, h, w] = np.sum(X[i, :, h_start:h_end, w_start:w_end] 
-                                        * self.W['val'][c, ...]) + self.b['val'][c]
-        return out 
+        self.cache = X, X_col, w_col
+        return out
 
     def backward(self, dout):
         """
@@ -71,41 +64,30 @@ class Conv():
             - self.W['grad']: weights gradient.
             - self.b['grad']: bias gradient.
         """
-        X = self.cache
-        
-        m, n_C, n_H, n_W = X.shape
-        m, n_C_dout, n_H_dout, n_W_dout = dout.shape
-        
-        #W_rot = np.rot90(np.rot90(self.W['val']))
-        dX = np.zeros(X.shape)
+        X, X_col, w_col = self.cache
+        # Compute bias gradient.
+        self.b['grad'] = np.sum(dout, axis=(0,2,3))
+    
+        # Reshape dout
+        dout = dout.reshape((w_col.shape[0], X_col.shape[-1]))
+        # Perform matrix multiplication between reshaped dout and w_col to get dX_col.
+        dX_col = w_col.T @ dout
+        # Perform matrix multiplication between reshaped dout and X_col to get dW_col.
+        dw_col = dout @ X_col.T
 
-        #Compute dW.
-        for i in range(m): #For each examples.
-            
-            for c in range(n_C_dout):
-                
-                for h in range(n_H_dout):
-                    h_start = h * self.s
-                    h_end = h_start + self.f
-
-                    for w in range(n_W_dout):
-                        w_start = w * self.s
-                        w_end = w_start + self.f
-
-                        self.W['grad'][c, ...] += dout[i, c, h, w] * X[i, :, h_start:h_end, w_start:w_end]
-                        #dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * W_rot[c, ...]
-                        dX[i, :, h_start:h_end, w_start:w_end] += dout[i, c, h, w] * self.W['val'][c, ...]
-        #Compute db.
-        for c in range(self.n_F):
-            self.b['grad'][c, ...] = np.sum(dout[:, c, ...])
+        # Reshape back to image (col2im).
+        dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
+        # Reshape dw_col into dw.
+        self.W['grad'] = dw_col.reshape((dw_col.shape[0], self.n_C, self.f, self.f))
         
         return dX, self.W['grad'], self.b['grad']
-        
+
 class AvgPool():
     
-    def __init__(self, filter_size, stride):
+    def __init__(self, filter_size, stride=1, padding=0):
         self.f = filter_size
         self.s = stride
+        self.p = padding
         self.cache = None
 
     def forward(self, X):
@@ -118,27 +100,16 @@ class AvgPool():
             Returns:
             - A_pool: X after average pooling layer. 
         """
-        m, n_C_prev, n_H_prev, n_W_prev = X.shape
-        
-        n_C = n_C_prev
-        n_H = int((n_H_prev - self.f)/ self.s) + 1
-        n_W = int((n_W_prev - self.f)/ self.s) + 1
-
-        A_pool = np.zeros((m, n_C, n_H, n_W))
-    
-        for i in range(m): #For each image.
-            
-            for h in range(n_H): #Slide the filter vertically.
-                h_start = h * self.s
-                h_end = h_start + self.f
-                
-                for w in range(n_W): #Slide the filter horizontally.                
-                    w_start = w * self.s
-                    w_end = w_start + self.f
-                    
-                    A_pool[i, :, h, w] = np.mean(X[i, :, h_start:h_end, w_start:w_end])
-        
         self.cache = X
+
+        m, n_C_prev, n_H_prev, n_W_prev = X.shape
+        n_C = n_C_prev
+        n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
+        n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
+    
+        X_col = im2col(X, self.f, self.f, self.s, self.p)
+        X_col = X_col.reshape(n_C, X_col.shape[0]//n_C, -1)
+        A_pool = np.mean(X_col, axis=1).reshape(m, n_C, n_H, n_W)
 
         return A_pool
 
@@ -153,26 +124,38 @@ class AvgPool():
             - dX: Conv layer updated with error.
         """
         X = self.cache
-        m, n_C, n_H, n_W = dout.shape
-        dX = np.copy(X)        
+        m, n_C_prev, n_H_prev, n_W_prev = X.shape
 
-        for i in range(m):
-            
-            for c in range(n_C):
+        n_C = n_C_prev
+        n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
+        n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
-                for h in range(n_H):
-                    h_start = h * self.s
-                    h_end = h_start + self.f
-
-                    for w in range(n_W):
-                        w_start = w * self.s
-                        w_end = w_start + self.f
-                    
-                        average = dout[i, c, h, w] / (n_H * n_W)
-                        filter_average = np.full((self.f, self.f), average)
-                        dX[i, c, h_start:h_end, w_start:w_end] += filter_average
+        dout_flatten = dout.reshape(n_C, -1) / (self.f * self.f)
+        dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0) / (self.f*self.f)
+        dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
 
         return dX
+        
+        # X = self.cache
+        # m, n_C, n_H, n_W = dout.shape    
+        # dX = np.zeros(X.shape)
+
+        # for i in range(m):
+            
+        #     for c in range(n_C):
+
+        #         for h in range(n_H):
+        #             h_start = h * self.s
+        #             h_end = h_start + self.f
+
+        #             for w in range(n_W):
+        #                 w_start = w * self.s
+        #                 w_end = w_start + self.f
+                    
+        #                 average = dout[i, c, h, w] / (n_H * n_W)
+        #                 filter_average = np.full((self.f, self.f), average)
+        #                 dX[i, c, h_start:h_end, w_start:w_end] += filter_average       
+        # return dX
 
 class Fc():
 

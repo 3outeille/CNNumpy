@@ -209,4 +209,3 @@ def test():
     print(info_test.format(test_loss, test_acc))
 
 train()
-test()

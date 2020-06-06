@@ -1,8 +1,6 @@
 #-----
 #Model
 #-----
-#import numpy as np
-
 from layers import *
 from utils import *
 import numpy as np
@@ -36,7 +34,6 @@ class LeNet5():
         act2 = self.tanh2.forward(conv2)
         pool2 = self.pool2.forward(act2) #(16x5x5)
         
-
         self.pool2_shape = pool2.shape #Need it in backpropagation.
         pool2_flatten = pool2.reshape(self.pool2_shape[0], -1) #(1x400)
     
