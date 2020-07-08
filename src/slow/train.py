@@ -68,9 +68,9 @@ def train():
         for i, (X_batch, y_batch) in zip(pbar, train_loader):
            
             y_pred = model.forward(X_batch)
-            loss, deltaL = cost.get(y_pred, y_batch)
+            loss = cost.get(y_pred, y_batch)
             
-            grads = model.backward(deltaL)
+            grads = model.backward(y_pred, y_batch)
             params = optimizer.update_params(grads)
             model.set_params(params)
 
