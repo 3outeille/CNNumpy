@@ -39,7 +39,8 @@ class NN():
       
         return y_pred
 
-    def backward(self, deltaL):
+    def backward(self, y_pred, y):
+        deltaL = self.softmax.backward(y_pred, y)
         deltaL, dW4, db4 = self.fc4.backward(deltaL)
         deltaL = self.tanh3.backward(deltaL)
         #print(deltaL.shape, dW4.shape, db4.shape)

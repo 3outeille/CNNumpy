@@ -124,17 +124,19 @@ class AvgPool():
 
         A_pool = np.zeros((m, n_C, n_H, n_W))
     
-        for i in range(m): #For each image.
+        for i in range(m):
             
-            for h in range(n_H): #Slide the filter vertically.
-                h_start = h * self.s
-                h_end = h_start + self.f
-                
-                for w in range(n_W): #Slide the filter horizontally.                
-                    w_start = w * self.s
-                    w_end = w_start + self.f
+            for c in range(n_C):
+
+                for h in range(n_H):
+                    h_start = h * self.s
+                    h_end = h_start + self.f
                     
-                    A_pool[i, :, h, w] = np.mean(X[i, :, h_start:h_end, w_start:w_end])
+                    for w in range(n_W):
+                        w_start = w * self.s
+                        w_end = w_start + self.f
+                        
+                        A_pool[i, c, h, w] = np.mean(X[i, c, h_start:h_end, w_start:w_end])
         
         self.cache = X
 
@@ -165,8 +167,8 @@ class AvgPool():
                     for w in range(n_W):
                         w_start = w * self.s
                         w_end = w_start + self.f
-                    
-                        average = dout[i, c, h, w] / (n_H * n_W)
+
+                        average = dout[i, c, h, w] / (self.f * self.f)
                         filter_average = np.full((self.f, self.f), average)
                         dX[i, c, h_start:h_end, w_start:w_end] += filter_average
 

@@ -16,9 +16,9 @@ filename = [
 def train():
     print("\n----------------EXTRACTION---------------\n")
     X, y, X_test, y_test = load(filename)
-    X, X_test = X/float(255), X_test/float(255)
-    X -= np.mean(X)
-    X_test -= np.mean(X_test)
+    # X, X_test = X/float(255), X_test/float(255)
+    # X -= np.mean(X)
+    # X_test -= np.mean(X_test)
 
     # print(y.shape, y_test.shape)
     # print(y[0], y_test[0])
@@ -31,6 +31,8 @@ def train():
     print("\n--------------PREPROCESSING--------------\n")
     X = resize_dataset(X)
     print("Resize dataset: OK")
+    X = (X - np.mean(X))/ np.std(X)
+    print("Normalize dataset: OK")
     y = one_hot_encoding(y)
     print("One-Hot-Encoding: OK")
     X_train, y_train, X_val, y_val = train_val_split(X, y)
@@ -38,8 +40,6 @@ def train():
 
     model = NN()
     cost = CrossEntropyLoss()
-    
-    params = model.get_params()
 
     optimizer = AdamGD(lr = 0.001, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
     train_costs, val_costs = [], []
@@ -47,7 +47,7 @@ def train():
     print("----------------TRAINING-----------------\n")
 
     NB_EPOCH = 5
-    BATCH_SIZE = 128
+    BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
     print("BATCH_SIZE: {}".format(BATCH_SIZE))
@@ -77,13 +77,13 @@ def train():
             #X_batch, y_batch = X_train[:1, ...], y_train[:1, ...]
         
             y_pred = model.forward(X_batch)
-            loss, deltaL = cost.get(y_pred, y_batch)
+            loss = cost.get(y_pred, y_batch)
             
-            grads = model.backward(deltaL)
+            grads = model.backward(y_pred, y_batch)
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            train_loss += loss * BATCH_SIZE
+            train_loss += loss #* BATCH_SIZE
             # print(y_batch)
             # print(y_batch.shape)
             # print(y_pred)
@@ -117,13 +117,13 @@ def train():
         for i, (X_batch, y_batch) in zip(pbar, val_loader):
     
             y_pred = model.forward(X_batch)
-            loss, deltaL = cost.get(y_pred, y_batch)
+            loss = cost.get(y_pred, y_batch)
             
-            grads = model.backward(deltaL)
+            grads = model.backward(y_pred, y_batch)
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            val_loss += loss * BATCH_SIZE
+            val_loss += loss #* BATCH_SIZE
             val_acc += sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))
 
             pbar.set_description("[Val] Epoch {}".format(epoch+1))

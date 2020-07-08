@@ -1,11 +1,7 @@
 from utils import get_indices, im2col, col2im
 import numpy as np
-import math
 
 class Conv():
-    """
-        Convolutional layer.
-    """
     
     def __init__(self, nb_filters, filter_size, nb_channels, stride=1, padding=0):
         self.n_F = nb_filters
@@ -13,14 +9,18 @@ class Conv():
         self.n_C = nb_channels
         self.s = stride
         self.p = padding
+    
+        # Xavier-Glorot initialization UNIFORM - used for sigmoid, tanh.
+        # bound = 1. / np.sqrt(self.f)
+        # self.W = {'val': np.random.uniform(-bound, bound, size=(self.n_F, self.n_C, self.f, self.f)),
+        #         'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
+        # self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
 
-
-        #Xavier initialization.
-        bound = 1 / math.sqrt(self.f * self.f)
-        self.W = {'val': np.random.uniform(-bound, bound, size=(self.n_F, self.n_C, self.f, self.f)),
-                  'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
-     
-        self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
+        # Xavier-Glorot initialization - used for sigmoid, tanh.
+        self.W = {'val': np.random.randn(self.n_F, self.n_C, self.f, self.f) * np.sqrt(1. / (self.f)),
+                  'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}  
+        #self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
+        self.b = {'val': np.random.randn(self.n_F) * np.sqrt(1. / self.n_F), 'grad': np.zeros((self.n_F))}
 
         self.cache = None
 
@@ -38,7 +38,7 @@ class Conv():
         n_C = self.n_F
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
-
+        
         X_col = im2col(X, self.f, self.f, self.s, self.p)
         w_col = self.W['val'].reshape((self.n_F, -1))
         b_col = self.b['val'].reshape(-1, 1)
@@ -46,7 +46,6 @@ class Conv():
         out = w_col @ X_col + b_col
         # Reshape back matrix to image.
         out = out.reshape((m, n_C, n_H, n_W))
-
         self.cache = X, X_col, w_col
         return out
 
@@ -66,7 +65,6 @@ class Conv():
         X, X_col, w_col = self.cache
         # Compute bias gradient.
         self.b['grad'] = np.sum(dout, axis=(0,2,3))
-    
         # Reshape dout
         dout = dout.reshape((w_col.shape[0], X_col.shape[-1]))
         # Perform matrix multiplication between reshaped dout and w_col to get dX_col.
@@ -78,7 +76,7 @@ class Conv():
         dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
         # Reshape dw_col into dw.
         self.W['grad'] = dw_col.reshape((dw_col.shape[0], self.n_C, self.f, self.f))
-        
+                
         return dX, self.W['grad'], self.b['grad']
 
 class AvgPool():
@@ -105,11 +103,10 @@ class AvgPool():
         n_C = n_C_prev
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
-    
+        
         X_col = im2col(X, self.f, self.f, self.s, self.p)
         X_col = X_col.reshape(n_C, X_col.shape[0]//n_C, -1)
         A_pool = np.mean(X_col, axis=1).reshape(m, n_C, n_H, n_W)
-
         return A_pool
 
     def backward(self, dout):
@@ -129,10 +126,11 @@ class AvgPool():
         n_H = int((n_H_prev + 2 * self.p - self.f)/ self.s) + 1
         n_W = int((n_W_prev + 2 * self.p - self.f)/ self.s) + 1
 
-        dout_flatten = dout.reshape(n_C, -1)
-        dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0) / (self.f * self.f)
+        dout_flatten = dout.reshape(n_C, -1) / (self.f * self.f)
+        dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0)
+        print(dX_col)
         dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
-
+        print(dX)
         return dX
 
 class Fc():
@@ -140,11 +138,17 @@ class Fc():
     def __init__(self, row, column):
         self.row = row
         self.col = column
-        
-        #Initialize Weight/bias.
-        bound = 1 / np.sqrt(self.row)
-        self.W = {'val': np.random.uniform(low=-bound, high=bound, size=(self.row, self.col)), 'grad': 0}
-        self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
+
+        # Xavier-Glorot initialization UNIFORM- used for sigmoid, tanh.
+        # bound = 1. / np.sqrt(self.col)
+        # self.W = {'val': np.random.uniform(low=-bound, high=bound, size=(self.row, self.col)), 'grad': 0}
+        # self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
+
+        np.random.seed(0)
+        # Xavier-Glorot initialization - used for sigmoid, tanh.
+        self.W = {'val': np.random.randn(self.row, self.col) * np.sqrt(1./self.col), 'grad': 0}
+        #self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
+        self.b = {'val': np.random.randn(1, self.row) * np.sqrt(1./self.row), 'grad': 0}
         
         self.cache = None
 
@@ -178,7 +182,6 @@ class Fc():
         m = fc.shape[0]
 
         #Compute gradient.
-    
         self.W['grad'] = (1/m) * np.dot(deltaL.T, fc)
         self.b['grad'] = (1/m) * np.sum(deltaL, axis = 0)
 
@@ -197,8 +200,7 @@ class SGD():
 
     def update_params(self, grads):
         for key in self.params:
-            self.params[key] += - self.lr * grads['d' + key]
-
+            self.params[key] = self.params[key] - self.lr * grads['d' + key]
         return self.params        
 
 class AdamGD():
@@ -218,14 +220,14 @@ class AdamGD():
             self.rmsprop['sd' + key] = np.zeros(self.params[key].shape)
 
     def update_params(self, grads):
-
+        
         for key in self.params:
             # Momentum update.
             self.momentum['vd' + key] = (self.beta1 * self.momentum['vd' + key]) + (1 - self.beta1) * grads['d' + key] 
             # RMSprop update.
-            self.rmsprop['sd' + key] =  (self.beta2 * self.rmsprop['sd' + key]) + (1 - self.beta2) * grads['d' + key]**2 
+            self.rmsprop['sd' + key] =  (self.beta2 * self.rmsprop['sd' + key]) + (1 - self.beta2) * (grads['d' + key]**2)
             # Update parameters.
-            self.params[key] += -self.lr * self.momentum['vd' + key] / (np.sqrt(self.rmsprop['sd' + key]) + self.epsilon)  
+            self.params[key] = self.params[key] - (self.lr * self.momentum['vd' + key]) / (np.sqrt(self.rmsprop['sd' + key]) + self.epsilon)  
 
         return self.params
 
@@ -256,6 +258,9 @@ class TanH():
         X = self.cache
         return new_deltaL * (1 - np.tanh(X)**2)
 
+from scipy.special import softmax
+from sklearn.metrics import log_loss
+
 class Softmax():
     
     def __init__(self):
@@ -268,7 +273,14 @@ class Softmax():
             Parameters:
             - X: input vector.
         """
-        return np.exp(X) / np.sum(np.exp(X), axis=1)[:, np.newaxis]
+        e_x = np.exp(X - np.max(X))
+        return  e_x / np.sum(e_x, axis=1)[:, np.newaxis]
+        #a = softmax(X, axis=1)
+        
+
+    def backward(self, y_pred, y):
+        return y_pred - y
+
 
 class CrossEntropyLoss():
 
@@ -283,8 +295,7 @@ class CrossEntropyLoss():
             - y_pred: model predictions.
             - y: ground truth labels.
         """
-        batch_size = y_pred.shape[1]
-        deltaL = y_pred - y
-        loss = -np.sum(y * np.log(y_pred)) / batch_size
-        
-        return loss, deltaL
+        #deltaL = y_pred - y
+        loss = -np.sum(y * np.log(y_pred))
+        #loss = log_loss(y, y_pred)
+        return loss#, deltaL

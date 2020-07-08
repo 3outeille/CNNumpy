@@ -1,5 +1,5 @@
 #------------------
-#Utilities function
+#Utility functions
 #------------------
 import concurrent.futures as cf
 import urllib.request
@@ -98,7 +98,7 @@ def resize_dataset(dataset):
         -dataset: a numpy array of size [?, 1, 28, 28].
     """        
     args = [dataset[i:i+1000] for i in range(0, len(dataset), 1000)]
-
+    
     def f(chunk):
         return transform.resize(chunk, (chunk.shape[0], 1, 32, 32))
 
@@ -134,7 +134,7 @@ def one_hot_encoding(y):
     Z[np.arange(N), y] = 1
     return Z
 
-def train_val_split(X, y):
+def train_val_split(X, y, val=50000):
     """
         Splits X and y into training and validation set.
 
@@ -142,8 +142,8 @@ def train_val_split(X, y):
         - X: dataset examples.
         - y: ground truth labels.
     """
-    X_train, X_val = X[:50000, :], X[50000:, :]
-    y_train, y_val = y[:50000, :], y[50000:, :]
+    X_train, X_val = X[:val, :], X[val:, :]
+    y_train, y_val = y[:val, :], y[val:, :]
 
     return X_train, y_train, X_val, y_val
 
@@ -271,7 +271,7 @@ def im2col(X, HF, WF, stride, pad):
     i, j, d = get_indices(X.shape, HF, WF, stride, pad)
     # Multi-dimensional arrays indexing.
     cols = X_padded[:, d, i, j]
-    cols = cols.reshape(HF * WF * X.shape[1], -1)
+    cols = np.concatenate(cols, axis=-1)
     return cols
 
 def col2im(dX_col, X_shape, HF, WF, stride, pad):
@@ -296,13 +296,14 @@ def col2im(dX_col, X_shape, HF, WF, stride, pad):
     X_padded = np.zeros((N, D, H_padded, W_padded))
     
     # Index matrices, necessary to transform our input image into a matrix. 
-    r, c, d = get_indices(X_shape, HF, WF, stride, pad)
+    i, j, d = get_indices(X_shape, HF, WF, stride, pad)
     # Add batch dimension: (X, Y) => (N, X, Y)
     dX_col_reshaped = dX_col.reshape((N, HF * WF * D, -1))
-    
+    print(dX_col_reshaped)
+
     # Reshape our matrix back to image.
     # slice(None) is used to produce the [::] effect which means "for every elements".
-    np.add.at(X_padded, (slice(None), d, r, c), dX_col_reshaped)
+    np.add.at(X_padded, (slice(None), d, i, j), dX_col_reshaped)
  
     # Remove padding from new image if needed.
     if pad == 0:
