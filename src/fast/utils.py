@@ -66,8 +66,7 @@ def load(filename):
                         ["test_images","t10k-images-idx3-ubyte.gz"],
                         ["training_labels","train-labels-idx1-ubyte.gz"],
                         ["test_labels","t10k-labels-idx1-ubyte.gz"]
-             ]
-]
+                  ]
     """
     L = [elt[1] for elt in filename]   
     count = 0 
