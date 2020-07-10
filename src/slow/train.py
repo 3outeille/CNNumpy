@@ -120,7 +120,7 @@ def train():
 
         if best_val_loss > val_loss:
             print("Validation loss decreased from {:0.6f} to {:0.6f}. Model saved".format(best_val_loss, val_loss))
-            save_params_to_file(model, "save_weights/final_weights.pkl")
+            save_params_to_file(model)
             best_val_loss = val_loss
 
         print()

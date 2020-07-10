@@ -29,7 +29,7 @@ def test():
     print("\n--------------LOAD PRETRAINED MODEL--------------\n")
     cost = CrossEntropyLoss()
     model = LeNet5()
-    model = load_params_from_file(model, "save_weights/final_weights.pkl")
+    model = load_params_from_file(model)
     print("Load pretrained model: OK\n")
 
     print("--------------------EVALUATION-------------------\n")
