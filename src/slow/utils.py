@@ -1,13 +1,12 @@
-#------------------
-#Utilities function
-#------------------
-
+from src.slow.data import *
+import concurrent.futures as cf
 import urllib.request
 import gzip
 import os
 from skimage import transform
 from PIL import Image
 import numpy as np
+import math
 import pickle
 
 def download_mnist(filename):
@@ -20,15 +19,13 @@ def download_mnist(filename):
                         ["test_images","t10k-images-idx3-ubyte.gz"],
                         ["training_labels","train-labels-idx1-ubyte.gz"],
                         ["test_labels","t10k-labels-idx1-ubyte.gz"]
-             ]
-]
+                    ]
     """
     base_url = "http://yann.lecun.com/exdb/mnist/"
     for elt in filename:
         print("Downloading " + elt[1] + " in data/ ...")
         urllib.request.urlretrieve(base_url + elt[1], 'data/' + elt[1])
     print("Download complete.")
-
 
 def extract_mnist(filename):
     """
@@ -40,8 +37,7 @@ def extract_mnist(filename):
                         ["test_images","t10k-images-idx3-ubyte.gz"],
                         ["training_labels","train-labels-idx1-ubyte.gz"],
                         ["test_labels","t10k-labels-idx1-ubyte.gz"]
-             ]
-]
+                    ]
     """
     mnist = {}
     for elt in filename[:2]:
@@ -90,16 +86,26 @@ def load(filename):
 
     print('Loading dataset: OK')
     return mnist["training_images"], mnist["training_labels"], mnist["test_images"], mnist["test_labels"]
-        
-
+    
 def resize_dataset(dataset):
     """
         Resizes dataset of MNIST images to (32, 32).
 
         Parameters:
         -dataset: a numpy array of size [?, 1, 28, 28].
-    """
-    return transform.resize(dataset, (dataset.shape[0], 1, 32, 32))
+    """        
+    args = [dataset[i:i+1000] for i in range(0, len(dataset), 1000)]
+    
+    def f(chunk):
+        return transform.resize(chunk, (chunk.shape[0], 1, 32, 32))
+
+    with cf.ThreadPoolExecutor() as executor:
+        res = executor.map(f, args)
+    
+    res = np.array([*res])
+    res = res.reshape(-1, 1, 32, 32)
+    return res
+
 
 def dataloader(X, y, BATCH_SIZE):
     """
@@ -125,7 +131,7 @@ def one_hot_encoding(y):
     Z[np.arange(N), y] = 1
     return Z
 
-def train_val_split(X, y):
+def train_val_split(X, y, val=50000):
     """
         Splits X and y into training and validation set.
 
@@ -133,8 +139,8 @@ def train_val_split(X, y):
         - X: dataset examples.
         - y: ground truth labels.
     """
-    X_train, X_val = X[:50000, :], X[50000:, :]
-    y_train, y_val = y[:50000, :], y[50000:, :]
+    X_train, X_val = X[:val, :], X[val:, :]
+    y_train, y_val = y[:val, :], y[val:, :]
 
     return X_train, y_train, X_val, y_val
 
@@ -163,7 +169,6 @@ def load_params_from_file(model, filename):
     model.set_params(params)
     return model
             
-
 def prettyPrint3D(M):
     """
         Displays a 3D matrix in a pretty way.
@@ -188,5 +193,3 @@ def prettyPrint3D(M):
                 print("/", end='\n\n')
         
         print('-------------------', end='\n\n')
-
-
