@@ -9,17 +9,10 @@ class Conv():
         self.n_C = nb_channels
         self.s = stride
         self.p = padding
-    
-        # Xavier-Glorot initialization UNIFORM - used for sigmoid, tanh.
-        # bound = 1. / np.sqrt(self.f)
-        # self.W = {'val': np.random.uniform(-bound, bound, size=(self.n_F, self.n_C, self.f, self.f)),
-        #         'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}
-        # self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
 
         # Xavier-Glorot initialization - used for sigmoid, tanh.
         self.W = {'val': np.random.randn(self.n_F, self.n_C, self.f, self.f) * np.sqrt(1. / (self.f)),
                   'grad': np.zeros((self.n_F, self.n_C, self.f, self.f))}  
-        #self.b = {'val': np.zeros((self.n_F)), 'grad': np.zeros((self.n_F))}
         self.b = {'val': np.random.randn(self.n_F) * np.sqrt(1. / self.n_F), 'grad': np.zeros((self.n_F))}
 
         self.cache = None
@@ -45,7 +38,7 @@ class Conv():
         # Perform matrix multiplication.
         out = w_col @ X_col + b_col
         # Reshape back matrix to image.
-        out = out.reshape((m, n_C, n_H, n_W))
+        out = np.array(np.hsplit(out, m)).reshape((m, n_C, n_H, n_W))
         self.cache = X, X_col, w_col
         return out
 
@@ -63,15 +56,17 @@ class Conv():
             - self.b['grad']: bias gradient.
         """
         X, X_col, w_col = self.cache
+        m, _, _, _ = X.shape
         # Compute bias gradient.
         self.b['grad'] = np.sum(dout, axis=(0,2,3))
-        # Reshape dout
-        dout = dout.reshape((w_col.shape[0], X_col.shape[-1]))
+        # Reshape dout properly.
+        dout = dout.reshape(dout.shape[0] * dout.shape[1], dout.shape[2] * dout.shape[3])
+        dout = np.array(np.vsplit(dout, m))
+        dout = np.concatenate(dout, axis=-1)
         # Perform matrix multiplication between reshaped dout and w_col to get dX_col.
         dX_col = w_col.T @ dout
         # Perform matrix multiplication between reshaped dout and X_col to get dW_col.
         dw_col = dout @ X_col.T
-
         # Reshape back to image (col2im).
         dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
         # Reshape dw_col into dw.
@@ -106,7 +101,10 @@ class AvgPool():
         
         X_col = im2col(X, self.f, self.f, self.s, self.p)
         X_col = X_col.reshape(n_C, X_col.shape[0]//n_C, -1)
-        A_pool = np.mean(X_col, axis=1).reshape(m, n_C, n_H, n_W)
+        A_pool = np.mean(X_col, axis=1)
+        A_pool = np.array(np.hsplit(A_pool, m))
+        A_pool = A_pool.reshape(m, n_C, n_H, n_W)
+
         return A_pool
 
     def backward(self, dout):
@@ -128,26 +126,21 @@ class AvgPool():
 
         dout_flatten = dout.reshape(n_C, -1) / (self.f * self.f)
         dX_col = np.repeat(dout_flatten, self.f*self.f, axis=0)
-        print(dX_col)
         dX = col2im(dX_col, X.shape, self.f, self.f, self.s, self.p)
-        print(dX)
+        # Reshape dX properly.
+        dX = dX.reshape(m, -1)
+        dX = np.array(np.hsplit(dX, n_C_prev))
+        dX = dX.reshape(m, n_C_prev, n_H_prev, n_W_prev)
         return dX
 
 class Fc():
 
     def __init__(self, row, column):
         self.row = row
-        self.col = column
+        self.col = colum
 
-        # Xavier-Glorot initialization UNIFORM- used for sigmoid, tanh.
-        # bound = 1. / np.sqrt(self.col)
-        # self.W = {'val': np.random.uniform(low=-bound, high=bound, size=(self.row, self.col)), 'grad': 0}
-        # self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
-
-        np.random.seed(0)
         # Xavier-Glorot initialization - used for sigmoid, tanh.
         self.W = {'val': np.random.randn(self.row, self.col) * np.sqrt(1./self.col), 'grad': 0}
-        #self.b = {'val': np.zeros((1, self.row)), 'grad': 0}
         self.b = {'val': np.random.randn(1, self.row) * np.sqrt(1./self.row), 'grad': 0}
         
         self.cache = None
@@ -189,7 +182,6 @@ class Fc():
         new_deltaL = np.dot(deltaL, self.W['val']) 
         #We still need to multiply new_deltaL by the derivative of the activation
         #function which is done in TanH.backward().
-
         return new_deltaL, self.W['grad'], self.b['grad']
     
 class SGD():
@@ -258,9 +250,6 @@ class TanH():
         X = self.cache
         return new_deltaL * (1 - np.tanh(X)**2)
 
-from scipy.special import softmax
-from sklearn.metrics import log_loss
-
 class Softmax():
     
     def __init__(self):
@@ -275,8 +264,6 @@ class Softmax():
         """
         e_x = np.exp(X - np.max(X))
         return  e_x / np.sum(e_x, axis=1)[:, np.newaxis]
-        #a = softmax(X, axis=1)
-        
 
     def backward(self, y_pred, y):
         return y_pred - y
@@ -295,7 +282,5 @@ class CrossEntropyLoss():
             - y_pred: model predictions.
             - y: ground truth labels.
         """
-        #deltaL = y_pred - y
         loss = -np.sum(y * np.log(y_pred))
-        #loss = log_loss(y, y_pred)
-        return loss#, deltaL
+        return loss

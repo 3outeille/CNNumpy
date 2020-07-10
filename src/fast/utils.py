@@ -103,7 +103,7 @@ def resize_dataset(dataset):
         return transform.resize(chunk, (chunk.shape[0], 1, 32, 32))
 
     with cf.ThreadPoolExecutor() as executor:
-        res = executor.map(f,  args)
+        res = executor.map(f, args)
     
     res = np.array([*res])
     res = res.reshape(-1, 1, 32, 32)
@@ -297,14 +297,11 @@ def col2im(dX_col, X_shape, HF, WF, stride, pad):
     
     # Index matrices, necessary to transform our input image into a matrix. 
     i, j, d = get_indices(X_shape, HF, WF, stride, pad)
-    # Add batch dimension: (X, Y) => (N, X, Y)
-    dX_col_reshaped = dX_col.reshape((N, HF * WF * D, -1))
-    print(dX_col_reshaped)
-
+    # Retrieve batch dimension by spliting dX_col N times: (X, Y) => (N, X, Y)
+    dX_col_reshaped = np.array(np.hsplit(dX_col, N))
     # Reshape our matrix back to image.
     # slice(None) is used to produce the [::] effect which means "for every elements".
     np.add.at(X_padded, (slice(None), d, i, j), dX_col_reshaped)
- 
     # Remove padding from new image if needed.
     if pad == 0:
         return X_padded

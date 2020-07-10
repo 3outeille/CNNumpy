@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
-#from sklearn.metrics import accuracy_score
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -26,13 +25,10 @@ def train():
     print("One-Hot-Encoding: OK")    
     X_train, y_train, X_val, y_val = train_val_split(X, y)
     print("Train and Validation set split: OK\n")
-    # from sklearn.utils import shuffle
-    # X_train, y_train = shuffle(X_train, y_train)
-    # print("Shuffle training set: OK\n")
 
     model = LeNet5()
     cost = CrossEntropyLoss()
-    lr = 0.01
+    lr = 0.001
 
     optimizer = AdamGD(lr = lr, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
     #optimizer = SGD(lr=0.01, params=model.get_params())
@@ -121,8 +117,6 @@ def train():
         info_val =  "val-loss: {:0.6f} | val-acc: {:0.3f}"
         print(info_val.format(val_loss, val_acc))
 
-        #pbar.set_postfix(loss=loss, accuracy=accuracy)
-
         if best_val_loss > val_loss:
             print("Validation loss decreased from {:0.6f} to {:0.6f}. Model saved".format(best_val_loss, val_loss))
             save_params_to_file(model, "save_weights/final_weights.pkl")
@@ -149,4 +143,3 @@ def train():
     plt.show()
 
 train()
-#toy_train()

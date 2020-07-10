@@ -12,17 +12,13 @@ def register_test(func):
     test_registry[func.__name__] = func
     return func
 
-# @register_test
+@register_test
 def test_conv():
-    n, c, h, w = 2, 1, 3, 3 # Image.
-    nf, cf, hf, wf = 2, 1, 2, 2 # Filters.
-    # x = np.random.randn(n, c, h, w)
-    x = np.arange(n*c*h*w).reshape(n,c,h,w)
-    x += 1
+    n, c, h, w = 20, 10, 5, 5 # Image.
+    nf, cf, hf, wf = 2, 10, 3, 3 # Filters.
+    x = np.random.randn(n, c, h, w)
     x = x.astype('float64')
-    # W = np.random.randn(nf, cf, hf, wf)
-    W = np.arange(nf*cf*hf*wf).reshape(nf,cf,hf,wf)
-    W += 1
+    W = np.random.randn(nf, cf, hf, wf)
     W = W.astype('float64')
     b = np.random.randn(nf)
     b = b.astype('float64')
@@ -53,28 +49,24 @@ def test_conv():
     # Check if biases are equals.
     assert np.allclose(biases_cnn, conv_pt.bias.data.numpy(), atol=1e-8) # 1e-8 tolerance.
     # Check if conv forward outputs are equals. 
-    # print(out_cnn)
-    # print("---------")
-    # print(out_pt.data.numpy())
-    # assert np.isin(out_cnn, out_pt.data.numpy()).all()
-    assert np.allclose(out_cnn, out_pt.data.numpy(), atol=1e-8) # 1e-8 tolerance.
+    assert np.allclose(out_cnn, out_pt.data.numpy(), atol=1e-5) # 1e-5 tolerance.
     # Check if conv backward outputs are equals. 
-    assert np.allclose(conv_cnn.W['grad'], conv_pt.weight.grad.numpy(), atol=1e-8) # 1e-8 tolerance.
-    assert np.allclose(conv_cnn.b['grad'], conv_pt.bias.grad.numpy(), atol=1e-8) # 1e-8 tolerance.
+    assert np.allclose(conv_cnn.W['grad'], conv_pt.weight.grad.numpy(), atol=1e-5) # 1e-5 tolerance.
+    assert np.allclose(conv_cnn.b['grad'], conv_pt.bias.grad.numpy(), atol=1e-5) # 1e-5 tolerance.
 
 @register_test
 def test_avgpool():
-    n, c, h, w = 2, 1, 4, 4 # Image.
+    n, c, h, w = 10, 4, 5, 5 # Image.
     kernel_size, stride = 2, 1
-    # x = np.random.randn(n, c, h, w)
-    x = np.arange(n*c*h*w).reshape(n,c,h,w)
-    x += 1
+    x = np.random.randn(n, c, h, w)
+    # x = np.arange(n*c*h*w).reshape(n,c,h,w)
+    # x += 1
     x = x.astype('float64')
     H = int((h - kernel_size)/ stride) + 1
     W = int((w - kernel_size)/ stride) + 1
-    # deltaL = np.random.rand(n, c, H, W) 
-    deltaL = np.arange(n*c*H*W).reshape(n,c,H,W)
-    deltaL += 1
+    deltaL = np.random.rand(n, c, H, W) 
+    # deltaL = np.arange(n*c*H*W).reshape(n,c,H,W)
+    # deltaL += 1
 
     # CNNumpy.
     inputs_cnn = x
@@ -88,10 +80,6 @@ def test_avgpool():
     avg_pt = nn.AvgPool2d(kernel_size, stride = stride)
     out_pt = avg_pt(inputs_pt) # Forward.
     out_pt.backward(torch.Tensor(deltaL)) # Backward.
-
-    print(inputs_cnn_grad)
-    print("----")
-    print(inputs_pt.grad.numpy())
 
     # Check if inputs are equals.
     assert np.allclose(inputs_cnn, inputs_pt.data.numpy(), atol=1e-8) # 1e-8 tolerance.
