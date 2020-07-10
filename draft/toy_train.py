@@ -54,7 +54,7 @@ def toy_train():
     
     print("----------------TRAINING-----------------\n")
 
-    NB_EPOCH = 15
+    NB_EPOCH = 1
     BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
@@ -123,7 +123,7 @@ def toy_train():
 
     # info_test = "test-loss: {:0.6f} | test-acc: {:0.3f}"
     # print(info_test.format(test_loss, test_acc))
-    
+    save_params_to_file(model) 
     pbar.close()
 
 toy_train()

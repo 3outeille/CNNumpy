@@ -18,7 +18,17 @@ pip install -r requirements.txt
 # Tidy up the root folder.
 python3 setup.py clean
 ```
-- Remember that you can't run files from `src/`. You have to either go to `fast/` or `slow/` folder first.
+
+## Usage of demo jupyter notebook files
+
+To play with the `demo-notebooks/` files, you need to make sure jupyter notebook can select your virtual environnment as a kernel.
+
+- Follow **"Installation"** instructions first and make sure your virtual environment is still activated.
+- Run the following line in the terminal.
+```bash
+python -m ipykernel install --user--name=myenv
+```
+- Run the notebook file and then select **Kernel > Switch Kernel > myenv**. You are now ready to go !
 
 <!---
 Variables with links.

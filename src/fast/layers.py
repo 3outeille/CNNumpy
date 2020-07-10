@@ -102,6 +102,7 @@ class AvgPool():
         X_col = im2col(X, self.f, self.f, self.s, self.p)
         X_col = X_col.reshape(n_C, X_col.shape[0]//n_C, -1)
         A_pool = np.mean(X_col, axis=1)
+        # Reshape A_pool properly.
         A_pool = np.array(np.hsplit(A_pool, m))
         A_pool = A_pool.reshape(m, n_C, n_H, n_W)
 

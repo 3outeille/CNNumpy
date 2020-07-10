@@ -8,3 +8,4 @@ sklearn==0.0
 matplotlib==3.2.2
 scikit-image==0.17.2
 tqdm==4.47.0
+ipykernel==5.3.2
