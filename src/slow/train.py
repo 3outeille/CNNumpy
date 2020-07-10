@@ -1,10 +1,10 @@
-from utils import *
-from model import *
+from src.slow.layers import *
+from src.slow.utils import *
+from src.slow.model import *
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
-#from sklearn.metrics import accuracy_score
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -39,7 +39,7 @@ def train():
     print("----------------TRAINING-----------------\n")
 
     NB_EPOCH = 2
-    BATCH_SIZE = 128
+    BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
     print("BATCH_SIZE: {}".format(BATCH_SIZE))
@@ -118,8 +118,6 @@ def train():
         info_val =  "val-loss: {:0.6f} | val-acc: {:0.3f}"
         print(info_val.format(val_loss, val_acc))
 
-        #pbar.set_postfix(loss=loss, accuracy=accuracy)
-
         if best_val_loss > val_loss:
             print("Validation loss decreased from {:0.6f} to {:0.6f}. Model saved".format(best_val_loss, val_loss))
             save_params_to_file(model, "save_weights/final_weights.pkl")
@@ -129,20 +127,4 @@ def train():
 
     pbar.close()
 
-    # fig = plt.figure(figsize=(10,10))
-    # fig.add_subplot(2, 1, 1)
-
-    # plt.plot(train_costs)
-    # plt.title("Training loss")
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
-
-    # fig.add_subplot(2, 1, 2)
-    # plt.plot(val_costs)
-    # plt.title("Validation loss")
-    # plt.xlabel('Epochs')
-    # plt.ylabel('Loss')
-
-    # plt.show()
-    
 train()

@@ -1,10 +1,10 @@
-from utils import *
-from model import *
+from src.slow.layers import *
+from src.slow.utils import *
+from src.slow.model import *
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
-#from sklearn.metrics import accuracy_score
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -34,7 +34,7 @@ def test():
 
     print("--------------------EVALUATION-------------------\n")
     
-    BATCH_SIZE = 128
+    BATCH_SIZE = 100
 
     nb_test_examples = len(X_test)
     test_loss = 0

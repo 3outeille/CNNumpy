@@ -1,4 +1,4 @@
-from layers import Conv, AvgPool
+from src.fast.layers import Conv, AvgPool
 import numpy as np
 import torch 
 import torch.nn as nn

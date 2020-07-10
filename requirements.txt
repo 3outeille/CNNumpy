@@ -1,0 +1,10 @@
+# install CNNumpy as top-level editable package.
+-e . 
+numpy==1.18.5
+torch==1.5.0
+scikit-learn==0.23.1
+scipy==1.4.1
+sklearn==0.0
+matplotlib==3.2.2
+scikit-image==0.17.2
+tqdm==4.47.0

@@ -1,4 +1,4 @@
-from utils import get_indices, im2col, col2im
+from src.fast.utils import get_indices, im2col, col2im
 import numpy as np
 
 class Conv():
@@ -137,7 +137,7 @@ class Fc():
 
     def __init__(self, row, column):
         self.row = row
-        self.col = colum
+        self.col = column
 
         # Xavier-Glorot initialization - used for sigmoid, tanh.
         self.W = {'val': np.random.randn(self.row, self.col) * np.sqrt(1./self.col), 'grad': 0}

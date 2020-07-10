@@ -1,10 +1,10 @@
-from utils import *
-from model import *
+from src.fast.utils import *
+from src.fast.layers import *
+from src.fast.model import LeNet5
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
-#from sklearn.metrics import accuracy_score
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -89,7 +89,7 @@ def toy_train():
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            train_loss += loss #* BATCH_SIZE
+            train_loss += loss * BATCH_SIZE
             train_acc += np.sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))
          
             pbar.set_description("[Train] Epoch {}".format(epoch+1))

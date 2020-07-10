@@ -1,6 +1,4 @@
-#------------------
-#Utility functions
-#------------------
+from src.fast.data import *
 import concurrent.futures as cf
 import urllib.request
 import gzip
@@ -28,7 +26,6 @@ def download_mnist(filename):
         print("Downloading " + elt[1] + " in data/ ...")
         urllib.request.urlretrieve(base_url + elt[1], 'data/' + elt[1])
     print("Download complete.")
-
 
 def extract_mnist(filename):
     """

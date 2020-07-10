@@ -1,10 +1,10 @@
-from utils import *
-from model import *
+from src.fast.utils import *
+from src.fast.layers import *
+from src.fast.model import LeNet5
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
-#from sklearn.metrics import accuracy_score
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -16,9 +16,8 @@ filename = [
 def test():
     print("\n--------------------EXTRACTION-------------------\n")
     X, y, X_test, y_test = load(filename)
-    X, X_test = X/float(255), X_test/float(255)
-    X -= np.mean(X)
-    X_test -= np.mean(X_test)
+    X = (X - np.mean(X)) / np.std(X)
+    X_test = (X_test - np.mean(X_test)) / np.std(X_test)
 
     print("\n------------------PREPROCESSING------------------\n")
     X_test = resize_dataset(X_test)
@@ -34,7 +33,7 @@ def test():
 
     print("--------------------EVALUATION-------------------\n")
     
-    BATCH_SIZE = 128
+    BATCH_SIZE = 100
 
     nb_test_examples = len(X_test)
     test_loss = 0
@@ -46,7 +45,7 @@ def test():
     for i, (X_batch, y_batch) in zip(pbar, test_loader):
       
         y_pred = model.forward(X_batch)
-        loss, deltaL = cost.get(y_pred, y_batch)
+        loss = cost.get(y_pred, y_batch)
 
         test_loss += loss * BATCH_SIZE
         test_acc += sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))

@@ -1,5 +1,6 @@
-from utils import *
-from model import *
+from src.fast.utils import *
+from src.fast.layers import *
+from src.fast.model import LeNet5
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
@@ -31,7 +32,6 @@ def train():
     lr = 0.001
 
     optimizer = AdamGD(lr = lr, beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8, params = model.get_params())    
-    #optimizer = SGD(lr=0.01, params=model.get_params())
     train_costs, val_costs = [], []
     
     print("----------------TRAINING-----------------\n")
@@ -73,7 +73,7 @@ def train():
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            train_loss += loss
+            train_loss += loss * BATCH_SIZE
             train_acc += sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))
 
             pbar.set_description("[Train] Epoch {}".format(epoch+1))
@@ -105,7 +105,7 @@ def train():
             params = optimizer.update_params(grads)
             model.set_params(params)
 
-            val_loss += loss
+            val_loss += loss * BATCH_SIZE
             val_acc += sum((np.argmax(y_batch, axis=1) == np.argmax(y_pred, axis=1)))
 
             pbar.set_description("[Val] Epoch {}".format(epoch+1))
