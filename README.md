@@ -2,7 +2,7 @@
 
 ## Introduction
 
-- **CNNumpy** is a Convolutional Neural Network implemented written in pure Numpy (educational purpose only).
+- **CNNumpy** is a Convolutional Neural Network written in pure Numpy (educational purpose only).
 - There are 2 implementation versions:
     - Slow: The naive version with nested for loops.
     - Fast: The im2col/col2im version.
