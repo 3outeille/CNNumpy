@@ -38,7 +38,7 @@ def train():
     
     print("----------------TRAINING-----------------\n")
 
-    NB_EPOCH = 2
+    NB_EPOCH = 1
     BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))

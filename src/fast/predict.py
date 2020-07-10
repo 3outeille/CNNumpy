@@ -13,7 +13,7 @@ filename = [
         ["test_labels","t10k-labels-idx1-ubyte.gz"]
 ]
 
-def test():
+def test(isNotebook=False):
     print("\n--------------------EXTRACTION-------------------\n")
     X, y, X_test, y_test = load(filename)
     X = (X - np.mean(X)) / np.std(X)
@@ -28,7 +28,7 @@ def test():
     print("\n--------------LOAD PRETRAINED MODEL--------------\n")
     cost = CrossEntropyLoss()
     model = LeNet5()
-    model = load_params_from_file(model)
+    model = load_params_from_file(model, isNotebook=isNotebook)
     print("Load pretrained model: OK\n")
 
     print("--------------------EVALUATION-------------------\n")
@@ -58,4 +58,16 @@ def test():
     info_test = "test-loss: {:0.6f} | test-acc: {:0.3f}"
     print(info_test.format(test_loss, test_acc))
 
-test()
+    # Display correct examples.
+    images, labels = X_test[:1000, ...], y_test[:1000, ...]
+    y_pred = model.forward(images)
+    predicted, labels= np.argmax(y_pred, axis=1), np.argmax(labels, axis=1)
+    print('\nSome correct classification:')
+    plot_example(images, labels, predicted)
+
+    # Display wrong examples.
+    print('\nSome incorrect classification:')
+    plot_example_errors(images, labels, predicted)
+
+# Uncomment to launch testing.
+# test()

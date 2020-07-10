@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from tqdm import trange
+from timeit import default_timer as timer
 
 filename = [
         ["training_images","train-images-idx3-ubyte.gz"],
@@ -36,7 +37,7 @@ def train():
     
     print("----------------TRAINING-----------------\n")
 
-    NB_EPOCH = 10
+    NB_EPOCH = 1
     BATCH_SIZE = 100
 
     print("EPOCHS: {}".format(NB_EPOCH))
@@ -64,6 +65,8 @@ def train():
         pbar = trange(nb_train_examples // BATCH_SIZE)
         train_loader = dataloader(X_train, y_train, BATCH_SIZE)
 
+        start = timer()
+
         for i, (X_batch, y_batch) in zip(pbar, train_loader):
             
             y_pred = model.forward(X_batch)
@@ -78,12 +81,16 @@ def train():
 
             pbar.set_description("[Train] Epoch {}".format(epoch+1))
         
+        end = timer()
+
         train_loss /= nb_train_examples
         train_costs.append(train_loss)
         train_acc /= nb_train_examples
 
         info_train = "train-loss: {:0.6f} | train-acc: {:0.3f}"
         print(info_train.format(train_loss, train_acc))
+        print()
+        print(f"Elapsed time for epoch {epoch+1}: {(end-start)/60} min.", end="\n")
 
         #-------------------------------------------------------------------------------
         #                                       
@@ -126,20 +133,21 @@ def train():
 
     pbar.close()
 
-    fig = plt.figure(figsize=(10,10))
-    fig.add_subplot(2, 1, 1)
+    # fig = plt.figure(figsize=(10,10))
+    # fig.add_subplot(2, 1, 1)
 
-    plt.plot(train_costs)
-    plt.title("Training loss")
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+    # plt.plot(train_costs)
+    # plt.title("Training loss")
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
 
-    fig.add_subplot(2, 1, 2)
-    plt.plot(val_costs)
-    plt.title("Validation loss")
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+    # fig.add_subplot(2, 1, 2)
+    # plt.plot(val_costs)
+    # plt.title("Validation loss")
+    # plt.xlabel('Epochs')
+    # plt.ylabel('Loss')
 
-    plt.show()
+    # plt.show()
 
-train()
+# Uncomment to launch training.
+# train()

@@ -1,13 +1,14 @@
-from src.fast.data import *
-import concurrent.futures as cf
-import urllib.request
-import gzip
 import os
-from skimage import transform
-from PIL import Image
-import numpy as np
+import gzip
 import math
 import pickle
+import numpy as np
+import urllib.request
+from PIL import Image
+from src.fast.data import *
+from skimage import transform
+import matplotlib.pyplot as plt
+import concurrent.futures as cf
 
 def download_mnist(filename):
     """
@@ -22,7 +23,7 @@ def download_mnist(filename):
                     ]
     """
     # Make data/ accessible from every folders.
-    terminal_path = ['src/fast/data/', 'fast/data/', 'data/', '../data']
+    terminal_path = ['src/fast/data/', 'fast/data/', '../fast/data/', 'data/', '../data']
     dirPath = None
     for path in terminal_path:
         if os.path.isdir(path):
@@ -49,7 +50,7 @@ def extract_mnist(filename):
                     ]
     """
     # Make data/ accessible from every folders.
-    terminal_path = ['src/fast/data/', 'fast/data/', 'data/', '../data']
+    terminal_path = ['src/fast/data/', 'fast/data/', '../fast/data/', 'data/', '../data']
     dirPath = None
     for path in terminal_path:
         if os.path.isdir(path):
@@ -87,7 +88,7 @@ def load(filename):
                   ]
     """
     # Make data/ accessible from every folders.
-    terminal_path = ['src/fast/data/', 'fast/data/', 'data/', '../data']
+    terminal_path = ['src/fast/data/', 'fast/data/', '../fast/data/', 'data/', '../data']
     dirPath = None
     for path in terminal_path:
         if os.path.isdir(path):
@@ -178,7 +179,7 @@ def save_params_to_file(model):
         -model: a CNN architecture.
     """
     # Make save_weights/ accessible from every folders.
-    terminal_path = ["src/fast/save_weights/", "fast/save_weights/", "save_weights/", "../save_weights/"]
+    terminal_path = ["src/fast/save_weights/", "fast/save_weights/", '../fast/save_weights/', "save_weights/", "../save_weights/"]
     dirPath = None
     for path in terminal_path:
         if os.path.isdir(path):
@@ -187,30 +188,39 @@ def save_params_to_file(model):
         raise FileNotFoundError("save_params_to_file(): Impossible to find save_weights/ from current folder. You need to manually add the path to it in the \'terminal_path\' list and the run the function again.")
 
     weights = model.get_params()
-    with open(dirPath + "final_weights.pkl","wb") as f:
-	    pickle.dump(weights, f)
+    if dirPath == '../fast/save_weights/': # We run the code from demo notebook.
+        with open(dirPath + "demo_weights.pkl","wb") as f:
+            pickle.dump(weights, f)
+    else:
+        with open(dirPath + "final_weights.pkl","wb") as f:
+            pickle.dump(weights, f)
 
-def load_params_from_file(model):
+def load_params_from_file(model, isNotebook=False):
     """
         Loads model parameters from a file.
 
         Parameters:
         -model: a CNN architecture.
     """
-    # Make final_weights.pkl file accessible from every folders.
-    terminal_path = ["src/fast/save_weights/final_weights.pkl", "fast/save_weights/final_weights.pkl",
-    "save_weights/final_weights.pkl", "../save_weights/final_weights.pkl"]
+    if isNotebook: # We run from demo-notebooks/
+        pickle_in = open("../fast/save_weights/demo_weights.pkl", 'rb')
+        params = pickle.load(pickle_in)
+        model.set_params(params)
+    else:
+        # Make final_weights.pkl file accessible from every folders.
+        terminal_path = ["src/fast/save_weights/final_weights.pkl", "fast/save_weights/final_weights.pkl",
+        "save_weights/final_weights.pkl", "../save_weights/final_weights.pkl"]
 
-    filePath = None
-    for path in terminal_path:
-        if os.path.isfile(path):
-            filePath = path
-    if filePath == None:
-        raise FileNotFoundError('load_params_from_file(): Cannot find final_weights.pkl from your current folder. You need to manually add it to terminal_path list and the run the function again.')
+        filePath = None
+        for path in terminal_path:
+            if os.path.isfile(path):
+                filePath = path
+        if filePath == None:
+            raise FileNotFoundError('load_params_from_file(): Cannot find final_weights.pkl from your current folder. You need to manually add it to terminal_path list and the run the function again.')
 
-    pickle_in = open(filePath, 'rb')
-    params = pickle.load(pickle_in)
-    model.set_params(params)
+        pickle_in = open(filePath, 'rb')
+        params = pickle.load(pickle_in)
+        model.set_params(params)
     return model
             
 def prettyPrint3D(M):
@@ -237,6 +247,60 @@ def prettyPrint3D(M):
                 print("/", end='\n\n')
         
         print('-------------------', end='\n\n')
+
+def plot_example(X, y, y_pred=None):
+    """
+        Plots 9 examples and their associate labels.
+        
+        Parameters:
+        -X: Training examples.
+        -y: true labels.
+        -y_pred: predicted labels.
+    """
+    # Create figure with 3 x 3 sub-plots.
+    fig, axes = plt.subplots(3, 3)
+    fig.subplots_adjust(hspace=0.3, wspace=0.3)
+     
+    X, y = X[:9, 0, ...], y[:9] 
+    
+    for i, ax in enumerate(axes.flat):
+        # Plot image.
+        ax.imshow(X[i])
+
+        # Show true and predicted classes.
+        if y_pred is None:
+            xlabel = "True: {0}".format(y[i])
+        else:
+            xlabel = "True: {0}, Pred: {1}".format(y[i], y_pred[i])
+
+        # Show the classes as the label on the x-axis.
+        ax.set_xlabel(xlabel)
+        
+        # Remove ticks from the plot.
+        ax.set_xticks([])
+        ax.set_yticks([])
+    
+    # Ensure the plot is shown correctly with multiple plots in a single Notebook cell.
+    plt.show()
+
+def plot_example_errors(X, y, y_pred):
+    """
+        Plots 9 example errors and their associate true/predicted labels.
+        
+        Parameters:
+        -X: Training examples.
+        -y: true labels.
+        -y_pred: predicted labels.
+    
+    """
+    incorrect = (y != y_pred)
+ 
+    X = X[incorrect]
+    y = y[incorrect]
+    y_pred = y_pred[incorrect]
+
+    # Plot the first 9 images.
+    plot_example(X, y, y_pred)
 
 def get_indices(X_shape, HF, WF, stride, pad):
     """
