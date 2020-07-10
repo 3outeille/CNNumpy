@@ -59,14 +59,10 @@ def test_avgpool():
     n, c, h, w = 10, 4, 5, 5 # Image.
     kernel_size, stride = 2, 1
     x = np.random.randn(n, c, h, w)
-    # x = np.arange(n*c*h*w).reshape(n,c,h,w)
-    # x += 1
     x = x.astype('float64')
     H = int((h - kernel_size)/ stride) + 1
     W = int((w - kernel_size)/ stride) + 1
     deltaL = np.random.rand(n, c, H, W) 
-    # deltaL = np.arange(n*c*H*W).reshape(n,c,H,W)
-    # deltaL += 1
 
     # CNNumpy.
     inputs_cnn = x
