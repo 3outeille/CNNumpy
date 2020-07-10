@@ -11,11 +11,10 @@
 
 - For more details, here are **blog posts** that explained in depth what's going under the hood for each implementation ([naive][naive-blog] and [fast][fast-blog]).
 
-- In the [`demo-cnnumpy-fast.ipynb`][demo-notebook] notebook, the im2col/col2im implementation can achieve an accuracy up to  **97.2% in 1 epoch (~6 min)**.
+- In the [`demo-cnnumpy-fast.ipynb`][demo-notebook] notebook, the im2col/col2im implementation can achieve an accuracy up to  **97.2% in 1 epoch (~6 min)**. Here are some results:
 
-- Here are some results:
-
-![](./img/correct-classification.png) ![](./img/incorrect-classification.png)
+<img src="./img/correct-classification.png" hspace="20%" width="50%">
+<img src="./img/incorrect-classification.png" hspace="20%" width="50%">
 
 
 ## Installation
