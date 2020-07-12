@@ -7,7 +7,7 @@
     - Slow: The naive version with nested for loops.
     - Fast: The im2col/col2im version.
 - The [naive implementation][naive-implementation] takes around **4 hours for 1 epoch** where the [fast implementation][fast-implementation] takes only **6 min for 1 epoch**.
-- **For more details, here are my blog posts explaining in depth what's going under the hood for each implementation ([naive][naive-blog] and [fast][fast-blog]).**
+- **For more details, here are my blog posts explaining in depth what's going on under the hood for each implementation ([naive][naive-blog] and [fast][fast-blog]).**
 - In the [`demo-cnnumpy-fast.ipynb`][demo-notebook] notebook, the im2col/col2im implementation can achieve an accuracy up to  **97.2% in 1 epoch (~6 min)**. Here are some results:
 
 <img src="./img/correct-classification.png" hspace="20%" width="50%">
