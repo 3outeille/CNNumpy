@@ -50,7 +50,7 @@ Variables with links.
 -->
 [slow-implementation]: https://github.com/3outeille/CNNumpy/tree/master/src/slow
 [fast-implementation]: https://github.com/3outeille/CNNumpy/tree/master/src/fast
-[slow-blog]: https://hackmd.io/@bouteille/ByusmjZc8
-[fast-blog]: https://hackmd.io/@bouteille/B1Cmns09I
+[slow-blog]: https://hackmd.io/@machine-learning/blog-post-cnnumpy-slow
+[fast-blog]: https://hackmd.io/@machine-learning/blog-post-cnnumpy-fast
 [demo-notebook]: https://github.com/3outeille/CNNumpy/blob/master/src/demo_notebooks/demo-cnnumpy-fast.ipynb
 [virtualenv]: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
